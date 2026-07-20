@@ -1,0 +1,526 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		173428E3664103115DB5C307 /* ClipoTimerPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB3796D7F6F93462CEDDE37 /* ClipoTimerPage.swift */; };
+		3638CC71F2D771B88B1A1A0F /* TidePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD55B89C0312FE88AF62B2FE /* TidePreviews.swift */; };
+		4AEC937C59F0B9DC05BA9E89 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8CBD7332857FF30E73786A68 /* Assets.xcassets */; };
+		4E7CD3BA8A78547C1D30353F /* PomodoroPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */; };
+		7DEFDACDA557D7728203F114 /* ClipoChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E66BEDD4D09E144AE82169D2 /* ClipoChrome.swift */; };
+		7E5B7D4B562974F19A7D1714 /* PomodoroControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AED29367D4585B46DD2DC6A /* PomodoroControllerTests.swift */; };
+		91609EA1F4007FA27F88B217 /* ClipoTagAndCategoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B11DD89739C00790B9C4CD /* ClipoTagAndCategoryViews.swift */; };
+		92B85BCB292F7C0AC54BF6F3 /* TidePopoverRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E29B2DE03C8A1721FD143A /* TidePopoverRoot.swift */; };
+		98675AACD0B671627C8B576F /* PomodoroDialScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7DE6A5068D5BCDAB242741 /* PomodoroDialScaleTests.swift */; };
+		99A3E26EBC26AA57F565ADBD /* ClipoStatisticsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1D0977E95AD2D0D870EBF0 /* ClipoStatisticsPage.swift */; };
+		9A12411A51A4FB6340462DCA /* PomodoroExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0FAA6D6E121FA02A1EC1AC /* PomodoroExportService.swift */; };
+		A674AB99F3B090F076F6C29B /* TideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45BAEBEBA92C44451EB1201D /* TideApp.swift */; };
+		A812F8D41ABF12FF881127F6 /* PomodoroPersistenceAndExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24CB3111BCB087D74F825777 /* PomodoroPersistenceAndExportTests.swift */; };
+		C0A00EC14663875278B5ED10 /* ClipoSettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AB791E201536AE195B1140 /* ClipoSettingsPage.swift */; };
+		C4526E90D44BE590B84AEF46 /* TideFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA0410564507A8911CC06C4 /* TideFormatting.swift */; };
+		C8810021A6809814EB193BC7 /* PomodoroModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1ED7EB3216C25EBA167ADBE /* PomodoroModels.swift */; };
+		DC745F50285BA34C54434981 /* PomodoroController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6ADF38539A0BD28731FB89 /* PomodoroController.swift */; };
+		F77C6209824E0AEEF366DDA7 /* PomodoroStatistics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DCA4D7E26658E6813CA11F /* PomodoroStatistics.swift */; };
+		F8054A2893871D487B24210B /* PomodoroNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C85ECCAFBEEE150ACC107CA7 /* PomodoroNotificationService.swift */; };
+		F89C413913295025CCAACF32 /* PomodoroStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B599D7155BF2393C173F6299 /* PomodoroStatisticsTests.swift */; };
+		FB89EE6884C4EA0640DDD2E8 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040FDA545738E89BA4099B5B /* StatusBarController.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7F9E1344B1DD0B1C477ED661 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 90A75D909A340A469D54F9F1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DFFE12DD84D9B50195B8141;
+			remoteInfo = Tide;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		040FDA545738E89BA4099B5B /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		06AB791E201536AE195B1140 /* ClipoSettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoSettingsPage.swift; sourceTree = "<group>"; };
+		1FA0410564507A8911CC06C4 /* TideFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideFormatting.swift; sourceTree = "<group>"; };
+		24CB3111BCB087D74F825777 /* PomodoroPersistenceAndExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroPersistenceAndExportTests.swift; sourceTree = "<group>"; };
+		2B6B12A4689B10709B734D22 /* Tide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tide.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		39E29B2DE03C8A1721FD143A /* TidePopoverRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidePopoverRoot.swift; sourceTree = "<group>"; };
+		45BAEBEBA92C44451EB1201D /* TideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideApp.swift; sourceTree = "<group>"; };
+		4AED29367D4585B46DD2DC6A /* PomodoroControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroControllerTests.swift; sourceTree = "<group>"; };
+		5F7DE6A5068D5BCDAB242741 /* PomodoroDialScaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroDialScaleTests.swift; sourceTree = "<group>"; };
+		69B11DD89739C00790B9C4CD /* ClipoTagAndCategoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoTagAndCategoryViews.swift; sourceTree = "<group>"; };
+		721CD940D3929EFD005575FF /* TideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CBD7332857FF30E73786A68 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA1D0977E95AD2D0D870EBF0 /* ClipoStatisticsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoStatisticsPage.swift; sourceTree = "<group>"; };
+		AF6ADF38539A0BD28731FB89 /* PomodoroController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroController.swift; sourceTree = "<group>"; };
+		B1ED7EB3216C25EBA167ADBE /* PomodoroModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroModels.swift; sourceTree = "<group>"; };
+		B599D7155BF2393C173F6299 /* PomodoroStatisticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroStatisticsTests.swift; sourceTree = "<group>"; };
+		B8DCA4D7E26658E6813CA11F /* PomodoroStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroStatistics.swift; sourceTree = "<group>"; };
+		BEB3796D7F6F93462CEDDE37 /* ClipoTimerPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoTimerPage.swift; sourceTree = "<group>"; };
+		C85ECCAFBEEE150ACC107CA7 /* PomodoroNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroNotificationService.swift; sourceTree = "<group>"; };
+		DD55B89C0312FE88AF62B2FE /* TidePreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidePreviews.swift; sourceTree = "<group>"; };
+		E66BEDD4D09E144AE82169D2 /* ClipoChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoChrome.swift; sourceTree = "<group>"; };
+		FE0FAA6D6E121FA02A1EC1AC /* PomodoroExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroExportService.swift; sourceTree = "<group>"; };
+		FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroPersistence.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1B76E8CE22781EF04418ADA8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B1ED7EB3216C25EBA167ADBE /* PomodoroModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		27A91B0AA5C097BEC18F59D9 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				040FDA545738E89BA4099B5B /* StatusBarController.swift */,
+				45BAEBEBA92C44451EB1201D /* TideApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		331C309B022C55E0D06BC47D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2B6B12A4689B10709B734D22 /* Tide.app */,
+				721CD940D3929EFD005575FF /* TideTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4DC114B2554EF769BC159E63 /* Tide */ = {
+			isa = PBXGroup;
+			children = (
+				8CBD7332857FF30E73786A68 /* Assets.xcassets */,
+				27A91B0AA5C097BEC18F59D9 /* App */,
+				1B76E8CE22781EF04418ADA8 /* Models */,
+				DA585BAD56EB44B7417AAB8A /* Services */,
+				F58D19A26034B10E0ECF923B /* Utilities */,
+				C40D8E895A7AB249F52C04A7 /* Views */,
+			);
+			path = Tide;
+			sourceTree = "<group>";
+		};
+		4E81887C93152FFA10466E2C /* TideTests */ = {
+			isa = PBXGroup;
+			children = (
+				4AED29367D4585B46DD2DC6A /* PomodoroControllerTests.swift */,
+				5F7DE6A5068D5BCDAB242741 /* PomodoroDialScaleTests.swift */,
+				24CB3111BCB087D74F825777 /* PomodoroPersistenceAndExportTests.swift */,
+				B599D7155BF2393C173F6299 /* PomodoroStatisticsTests.swift */,
+			);
+			path = TideTests;
+			sourceTree = "<group>";
+		};
+		C40D8E895A7AB249F52C04A7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E66BEDD4D09E144AE82169D2 /* ClipoChrome.swift */,
+				06AB791E201536AE195B1140 /* ClipoSettingsPage.swift */,
+				AA1D0977E95AD2D0D870EBF0 /* ClipoStatisticsPage.swift */,
+				69B11DD89739C00790B9C4CD /* ClipoTagAndCategoryViews.swift */,
+				BEB3796D7F6F93462CEDDE37 /* ClipoTimerPage.swift */,
+				39E29B2DE03C8A1721FD143A /* TidePopoverRoot.swift */,
+				DD55B89C0312FE88AF62B2FE /* TidePreviews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C5D009E4BEFF4F184C869BEF = {
+			isa = PBXGroup;
+			children = (
+				4DC114B2554EF769BC159E63 /* Tide */,
+				4E81887C93152FFA10466E2C /* TideTests */,
+				331C309B022C55E0D06BC47D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DA585BAD56EB44B7417AAB8A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AF6ADF38539A0BD28731FB89 /* PomodoroController.swift */,
+				FE0FAA6D6E121FA02A1EC1AC /* PomodoroExportService.swift */,
+				C85ECCAFBEEE150ACC107CA7 /* PomodoroNotificationService.swift */,
+				FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */,
+				B8DCA4D7E26658E6813CA11F /* PomodoroStatistics.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		F58D19A26034B10E0ECF923B /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				1FA0410564507A8911CC06C4 /* TideFormatting.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		170C49D9D8E64E2F3E539E47 /* TideTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6032BB7EF53EAEBEB13050CC /* Build configuration list for PBXNativeTarget "TideTests" */;
+			buildPhases = (
+				AF6AEB424593C8DBEC89EBF4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3BDAD2A6C1DB8781A49F327B /* PBXTargetDependency */,
+			);
+			name = TideTests;
+			packageProductDependencies = (
+			);
+			productName = TideTests;
+			productReference = 721CD940D3929EFD005575FF /* TideTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3DFFE12DD84D9B50195B8141 /* Tide */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA5080E00E0123132278FFAC /* Build configuration list for PBXNativeTarget "Tide" */;
+			buildPhases = (
+				5AC26BCB031B9BC205E69E8B /* Sources */,
+				C2187F92E0C4E9A51C6D4576 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Tide;
+			packageProductDependencies = (
+			);
+			productName = Tide;
+			productReference = 2B6B12A4689B10709B734D22 /* Tide.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		90A75D909A340A469D54F9F1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					170C49D9D8E64E2F3E539E47 = {
+						ProvisioningStyle = Automatic;
+					};
+					3DFFE12DD84D9B50195B8141 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 172CF19F4D0120DEAA067E1C /* Build configuration list for PBXProject "Tide" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C5D009E4BEFF4F184C869BEF;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 331C309B022C55E0D06BC47D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3DFFE12DD84D9B50195B8141 /* Tide */,
+				170C49D9D8E64E2F3E539E47 /* TideTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C2187F92E0C4E9A51C6D4576 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4AEC937C59F0B9DC05BA9E89 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5AC26BCB031B9BC205E69E8B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7DEFDACDA557D7728203F114 /* ClipoChrome.swift in Sources */,
+				C0A00EC14663875278B5ED10 /* ClipoSettingsPage.swift in Sources */,
+				99A3E26EBC26AA57F565ADBD /* ClipoStatisticsPage.swift in Sources */,
+				91609EA1F4007FA27F88B217 /* ClipoTagAndCategoryViews.swift in Sources */,
+				173428E3664103115DB5C307 /* ClipoTimerPage.swift in Sources */,
+				DC745F50285BA34C54434981 /* PomodoroController.swift in Sources */,
+				9A12411A51A4FB6340462DCA /* PomodoroExportService.swift in Sources */,
+				C8810021A6809814EB193BC7 /* PomodoroModels.swift in Sources */,
+				F8054A2893871D487B24210B /* PomodoroNotificationService.swift in Sources */,
+				4E7CD3BA8A78547C1D30353F /* PomodoroPersistence.swift in Sources */,
+				F77C6209824E0AEEF366DDA7 /* PomodoroStatistics.swift in Sources */,
+				FB89EE6884C4EA0640DDD2E8 /* StatusBarController.swift in Sources */,
+				A674AB99F3B090F076F6C29B /* TideApp.swift in Sources */,
+				C4526E90D44BE590B84AEF46 /* TideFormatting.swift in Sources */,
+				92B85BCB292F7C0AC54BF6F3 /* TidePopoverRoot.swift in Sources */,
+				3638CC71F2D771B88B1A1A0F /* TidePreviews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF6AEB424593C8DBEC89EBF4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E5B7D4B562974F19A7D1714 /* PomodoroControllerTests.swift in Sources */,
+				98675AACD0B671627C8B576F /* PomodoroDialScaleTests.swift in Sources */,
+				A812F8D41ABF12FF881127F6 /* PomodoroPersistenceAndExportTests.swift in Sources */,
+				F89C413913295025CCAACF32 /* PomodoroStatisticsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3BDAD2A6C1DB8781A49F327B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3DFFE12DD84D9B50195B8141 /* Tide */;
+			targetProxy = 7F9E1344B1DD0B1C477ED661 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0ED1E48A2E9F16B4C01FC6BD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tide;
+				INFOPLIST_KEY_LSUIElement = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.Tide;
+				PRODUCT_NAME = Tide;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		200ACF2BA0537FE49CCAB4A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.TideTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tide.app/Contents/MacOS/Tide";
+			};
+			name = Release;
+		};
+		C7BFCB0FDF7119A45ACD827B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		CAD2E86AC7182AB1F13B810B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tide;
+				INFOPLIST_KEY_LSUIElement = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.Tide;
+				PRODUCT_NAME = Tide;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D2DFEC7D45A80DC5DEEA45A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		EFCB127186FA2F972E791605 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.TideTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tide.app/Contents/MacOS/Tide";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		172CF19F4D0120DEAA067E1C /* Build configuration list for PBXProject "Tide" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2DFEC7D45A80DC5DEEA45A6 /* Debug */,
+				C7BFCB0FDF7119A45ACD827B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6032BB7EF53EAEBEB13050CC /* Build configuration list for PBXNativeTarget "TideTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFCB127186FA2F972E791605 /* Debug */,
+				200ACF2BA0537FE49CCAB4A2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FA5080E00E0123132278FFAC /* Build configuration list for PBXNativeTarget "Tide" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CAD2E86AC7182AB1F13B810B /* Debug */,
+				0ED1E48A2E9F16B4C01FC6BD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 90A75D909A340A469D54F9F1 /* Project object */;
+}
