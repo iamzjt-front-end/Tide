@@ -3,13 +3,13 @@
     <channel>
         <title>Tide</title>
         <item>
-            <title>0.0.1</title>
-            <pubDate>Wed, 22 Jul 2026 12:31:39 +0800</pubDate>
+            <title>0.0.2</title>
+            <pubDate>Wed, 22 Jul 2026 13:06:24 +0800</pubDate>
             <link>https://github.com/iamzjt-front-end/Tide/releases/latest</link>
-            <sparkle:version>15</sparkle:version>
-            <sparkle:shortVersionString>0.0.1</sparkle:shortVersionString>
+            <sparkle:version>16</sparkle:version>
+            <sparkle:shortVersionString>0.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/iamzjt-front-end/Tide/releases/download/v0.0.1/Tide-v0.0.1-macos.dmg" length="2466401" type="application/octet-stream" sparkle:edSignature="6xnU061gt2p/lkc5S8Y6LoF5gMe81vK59URVDUcnbeLvhWOJ1hntqXwu9NxxeocAy2hAo8f/OHBT0i/blWuGDw=="/>
+            <enclosure url="https://github.com/iamzjt-front-end/Tide/releases/download/v0.0.2/Tide-v0.0.2-macos.dmg" length="3497868" type="application/octet-stream" sparkle:edSignature="xom8uyQex21QTJDiMplHHGGwsnJ+Ratc+MqNPfjp+spgEWZf+IeIbugbc+2Sjy8Ax4bzR+x2Nfq/KcvS4amWBQ=="/>
         </item>
     </channel>
 </rss>
