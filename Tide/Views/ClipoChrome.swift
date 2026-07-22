@@ -228,6 +228,7 @@ struct ClipoToolbar: View {
 
   var controller: PomodoroController
   var presentation: TidePresentationState
+  var updateController: TideUpdateController?
 
   @State private var showingSettings = false
 
@@ -268,7 +269,10 @@ struct ClipoToolbar: View {
       .popover(isPresented: $showingSettings, arrowEdge: .top) {
         ZStack {
           ClipoBackground()
-          ClipoSettingsPage(controller: controller)
+          ClipoSettingsPage(
+            controller: controller,
+            updateController: updateController
+          )
         }
         .frame(width: 380, height: 530)
       }

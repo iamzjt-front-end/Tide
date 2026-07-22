@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct ClipoSettingsPage: View {
   var controller: PomodoroController
+  var updateController: TideUpdateController? = nil
 
   @Environment(\.colorScheme) private var colorScheme
 
@@ -212,6 +213,60 @@ struct ClipoSettingsPage: View {
                 }
               }
             }
+
+            GlassCard {
+              VStack(alignment: .leading, spacing: 12) {
+                Text("关于与更新")
+                  .font(.system(size: 12, weight: .semibold))
+                  .foregroundStyle(.secondary)
+
+                HStack(spacing: 12) {
+                  VStack(alignment: .leading, spacing: 2) {
+                    Text("Tide")
+                      .font(.system(size: 12, weight: .semibold))
+                      .foregroundStyle(.primary)
+                    Text("版本 \(versionText)")
+                      .font(.system(size: 10, weight: .medium))
+                      .foregroundStyle(.secondary)
+                  }
+
+                  Spacer()
+
+                  Button {
+                    updateController?.checkForUpdates()
+                  } label: {
+                    Label("检查更新", systemImage: "arrow.triangle.2.circlepath")
+                      .contentShape(Capsule())
+                  }
+                  .clipoCapsuleButton()
+                  .disabled(!(updateController?.canCheckForUpdates ?? false))
+                  .accessibilityLabel("检查 Tide 更新")
+                }
+
+                Divider().overlay(TideTheme.border(colorScheme))
+
+                Button(action: quitApplication) {
+                  HStack {
+                    Label("退出 Tide", systemImage: "power")
+                      .font(.system(size: 12, weight: .semibold))
+                    Spacer()
+                  }
+                  .foregroundStyle(.primary.opacity(0.82))
+                  .padding(.horizontal, 11)
+                  .frame(height: 40)
+                  .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focusable(false)
+                .tideGlassRect(
+                  cornerRadius: 12,
+                  tint: Color.primary.opacity(0.04),
+                  interactive: true
+                )
+                .accessibilityLabel("退出 Tide 应用")
+                .help("退出 Tide")
+              }
+            }
           }
           .padding(.horizontal, 28)
           .padding(.bottom, 24)
@@ -242,6 +297,18 @@ struct ClipoSettingsPage: View {
       get: { controller.configuration.notificationsEnabled },
       set: { controller.setNotificationsEnabled($0) }
     )
+  }
+
+  private var versionText: String {
+    let version = Bundle.main.object(
+      forInfoDictionaryKey: "CFBundleShortVersionString"
+    ) as? String
+    let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+    return "\(version ?? "0.0.1") (\(build ?? "1"))"
+  }
+
+  private func quitApplication() {
+    NSApplication.shared.terminate(nil)
   }
 
   private func settingCircleButton(symbol: String, label: String, action: @escaping () -> Void) -> some View {

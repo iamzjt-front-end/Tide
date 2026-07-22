@@ -4,6 +4,10 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.9.4
 settings:
   base:
     SWIFT_VERSION: 6.0
@@ -14,6 +18,8 @@ targets:
   Tide:
     type: application
     platform: macOS
+    dependencies:
+      - package: Sparkle
     sources:
       - path: Tide
         excludes:
@@ -26,8 +32,8 @@ targets:
         PRODUCT_NAME: Tide
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Tide/Info.plist
-        MARKETING_VERSION: 0.0.1
-        CURRENT_PROJECT_VERSION: 15
+        MARKETING_VERSION: 0.0.2
+        CURRENT_PROJECT_VERSION: 16
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_APP_SANDBOX: NO
     scheme:

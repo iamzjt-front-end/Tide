@@ -10,12 +10,21 @@ struct TideApp: App {
     Settings {
       EmptyView()
     }
+    .commands {
+      CommandGroup(replacing: .appTermination) {
+        Button("退出 Tide") {
+          NSApplication.shared.terminate(nil)
+        }
+        .keyboardShortcut("q")
+      }
+    }
   }
 }
 
 @MainActor
 final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
   private var statusBarController: StatusBarController?
+  private var updateController: TideUpdateController?
   private var observers: [NSObjectProtocol] = []
 #if DEBUG
   private var walkthroughWindow: NSWindow?
@@ -25,7 +34,12 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     NSApplication.shared.setActivationPolicy(.accessory)
     UNUserNotificationCenter.current().delegate = self
     let controller = PomodoroController()
-    statusBarController = StatusBarController(controller: controller)
+    let updateController = TideUpdateController()
+    self.updateController = updateController
+    statusBarController = StatusBarController(
+      controller: controller,
+      updateController: updateController
+    )
     Task { @MainActor [weak controller] in
       await Task.yield()
       guard let controller else { return }
@@ -79,8 +93,12 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     _ center: UNUserNotificationCenter,
     didReceive response: UNNotificationResponse
   ) async {
+    let notificationIdentifier = response.notification.request.identifier
     await MainActor.run { [weak self] in
-      self?.statusBarController?.showPopoverFromNotification()
+      guard let self else { return }
+      if self.updateController?.handleNotification(identifier: notificationIdentifier) != true {
+        self.statusBarController?.showPopoverFromNotification()
+      }
     }
   }
 
@@ -113,7 +131,8 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     window.contentView = NSHostingView(
       rootView: TidePopoverRoot(
         controller: controller,
-        presentation: presentation
+        presentation: presentation,
+        updateController: updateController
       )
     )
     walkthroughWindow = window

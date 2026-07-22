@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class StatusBarController: NSObject {
   let controller: PomodoroController
+  let updateController: TideUpdateController
   let presentation = TidePresentationState()
 
   private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -11,9 +12,49 @@ final class StatusBarController: NSObject {
   private let popover = NSPopover()
   private var refreshTask: Task<Void, Never>?
   private var lastStatusBarPresentation: StatusBarPresentation?
+  private var checkForUpdatesMenuItem: NSMenuItem?
 
-  init(controller: PomodoroController) {
+  private lazy var statusItemMenu: NSMenu = {
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+
+    let versionItem = NSMenuItem(
+      title: "Tide \(Self.versionText)",
+      action: nil,
+      keyEquivalent: ""
+    )
+    versionItem.isEnabled = false
+    menu.addItem(versionItem)
+    menu.addItem(.separator())
+
+    let updateItem = NSMenuItem(
+      title: "检查更新…",
+      action: #selector(checkForUpdates),
+      keyEquivalent: ""
+    )
+    updateItem.target = self
+    updateItem.image = NSImage(
+      systemSymbolName: "arrow.triangle.2.circlepath",
+      accessibilityDescription: nil
+    )
+    checkForUpdatesMenuItem = updateItem
+    menu.addItem(updateItem)
+    menu.addItem(.separator())
+
+    let quitItem = NSMenuItem(
+      title: "退出 Tide",
+      action: #selector(quitApplication),
+      keyEquivalent: "q"
+    )
+    quitItem.target = self
+    quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
+    menu.addItem(quitItem)
+    return menu
+  }()
+
+  init(controller: PomodoroController, updateController: TideUpdateController) {
     self.controller = controller
+    self.updateController = updateController
     super.init()
     configureStatusItem()
     configurePopover()
@@ -27,8 +68,8 @@ final class StatusBarController: NSObject {
   private func configureStatusItem() {
     guard let button = statusItem.button else { return }
     button.target = self
-    button.action = #selector(togglePopover(_:))
-    button.sendAction(on: [.leftMouseUp])
+    button.action = #selector(handleStatusItemClick(_:))
+    button.sendAction(on: [.leftMouseUp, .rightMouseUp])
     button.imagePosition = .imageOnly
     button.imageScaling = .scaleNone
     button.title = ""
@@ -53,6 +94,7 @@ final class StatusBarController: NSObject {
     TidePopoverRoot(
       controller: controller,
       presentation: presentation,
+      updateController: updateController,
       onPreferredHeightChange: { [weak self] height in
         self?.setPopoverHeight(height)
       }
@@ -64,12 +106,34 @@ final class StatusBarController: NSObject {
     popover.contentSize = NSSize(width: TidePopoverMetrics.width, height: height)
   }
 
-  @objc private func togglePopover(_ sender: Any?) {
+  @objc private func handleStatusItemClick(_ sender: NSStatusBarButton) {
+    guard let event = NSApplication.shared.currentEvent else {
+      togglePopover()
+      return
+    }
+
+    if event.type == .rightMouseUp {
+      checkForUpdatesMenuItem?.isEnabled = updateController.canCheckForUpdates
+      NSMenu.popUpContextMenu(statusItemMenu, with: event, for: sender)
+    } else {
+      togglePopover()
+    }
+  }
+
+  private func togglePopover() {
     if popover.isShown {
       closePopover()
     } else {
       showPopover()
     }
+  }
+
+  @objc private func checkForUpdates() {
+    updateController.checkForUpdates()
+  }
+
+  @objc private func quitApplication() {
+    NSApplication.shared.terminate(nil)
   }
 
   private func showPopover() {
@@ -158,6 +222,13 @@ final class StatusBarController: NSObject {
     button.setAccessibilityValue("\(next.phaseTitle)，\(controller.formattedTime)，\(next.runStateTitle)")
     button.setAccessibilityHelp("打开或关闭 Tide")
     lastStatusBarPresentation = next
+  }
+
+  private static var versionText: String {
+    let version = Bundle.main.object(
+      forInfoDictionaryKey: "CFBundleShortVersionString"
+    ) as? String
+    return "v\(version ?? "0.0.1")"
   }
 
 }

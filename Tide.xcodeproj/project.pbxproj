@@ -11,6 +11,7 @@
 		3638CC71F2D771B88B1A1A0F /* TidePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD55B89C0312FE88AF62B2FE /* TidePreviews.swift */; };
 		4AEC937C59F0B9DC05BA9E89 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8CBD7332857FF30E73786A68 /* Assets.xcassets */; };
 		4E7CD3BA8A78547C1D30353F /* PomodoroPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */; };
+		5718C55A25526FF69ECDEE15 /* TideUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFEEDE80624945A219E84C1F /* TideUpdateController.swift */; };
 		7DEFDACDA557D7728203F114 /* ClipoChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E66BEDD4D09E144AE82169D2 /* ClipoChrome.swift */; };
 		7E5B7D4B562974F19A7D1714 /* PomodoroControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AED29367D4585B46DD2DC6A /* PomodoroControllerTests.swift */; };
 		91609EA1F4007FA27F88B217 /* ClipoTagAndCategoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B11DD89739C00790B9C4CD /* ClipoTagAndCategoryViews.swift */; };
@@ -18,6 +19,7 @@
 		98675AACD0B671627C8B576F /* PomodoroDialScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7DE6A5068D5BCDAB242741 /* PomodoroDialScaleTests.swift */; };
 		99A3E26EBC26AA57F565ADBD /* ClipoStatisticsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1D0977E95AD2D0D870EBF0 /* ClipoStatisticsPage.swift */; };
 		9A12411A51A4FB6340462DCA /* PomodoroExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0FAA6D6E121FA02A1EC1AC /* PomodoroExportService.swift */; };
+		9FF79ED9D02C034D4A29C8CB /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 8C61506F193E534A13FA3748 /* Sparkle */; };
 		A674AB99F3B090F076F6C29B /* TideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45BAEBEBA92C44451EB1201D /* TideApp.swift */; };
 		A812F8D41ABF12FF881127F6 /* PomodoroPersistenceAndExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24CB3111BCB087D74F825777 /* PomodoroPersistenceAndExportTests.swift */; };
 		C0A00EC14663875278B5ED10 /* ClipoSettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AB791E201536AE195B1140 /* ClipoSettingsPage.swift */; };
@@ -59,12 +61,24 @@
 		B599D7155BF2393C173F6299 /* PomodoroStatisticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroStatisticsTests.swift; sourceTree = "<group>"; };
 		B8DCA4D7E26658E6813CA11F /* PomodoroStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroStatistics.swift; sourceTree = "<group>"; };
 		BEB3796D7F6F93462CEDDE37 /* ClipoTimerPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoTimerPage.swift; sourceTree = "<group>"; };
+		BFEEDE80624945A219E84C1F /* TideUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideUpdateController.swift; sourceTree = "<group>"; };
 		C85ECCAFBEEE150ACC107CA7 /* PomodoroNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroNotificationService.swift; sourceTree = "<group>"; };
 		DD55B89C0312FE88AF62B2FE /* TidePreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidePreviews.swift; sourceTree = "<group>"; };
 		E66BEDD4D09E144AE82169D2 /* ClipoChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoChrome.swift; sourceTree = "<group>"; };
 		FE0FAA6D6E121FA02A1EC1AC /* PomodoroExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroExportService.swift; sourceTree = "<group>"; };
 		FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroPersistence.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BA1E9CD571C3A35253F67797 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9FF79ED9D02C034D4A29C8CB /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1B76E8CE22781EF04418ADA8 /* Models */ = {
@@ -148,6 +162,7 @@
 				C85ECCAFBEEE150ACC107CA7 /* PomodoroNotificationService.swift */,
 				FFD15EBF2FDA311FDCD59CB2 /* PomodoroPersistence.swift */,
 				B8DCA4D7E26658E6813CA11F /* PomodoroStatistics.swift */,
+				BFEEDE80624945A219E84C1F /* TideUpdateController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -187,6 +202,7 @@
 			buildPhases = (
 				5AC26BCB031B9BC205E69E8B /* Sources */,
 				C2187F92E0C4E9A51C6D4576 /* Resources */,
+				BA1E9CD571C3A35253F67797 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -194,6 +210,7 @@
 			);
 			name = Tide;
 			packageProductDependencies = (
+				8C61506F193E534A13FA3748 /* Sparkle */,
 			);
 			productName = Tide;
 			productReference = 2B6B12A4689B10709B734D22 /* Tide.app */;
@@ -227,6 +244,9 @@
 			);
 			mainGroup = C5D009E4BEFF4F184C869BEF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BCBC22905439CD1BA89B5D19 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 331C309B022C55E0D06BC47D /* Products */;
 			projectDirPath = "";
@@ -270,6 +290,7 @@
 				C4526E90D44BE590B84AEF46 /* TideFormatting.swift in Sources */,
 				92B85BCB292F7C0AC54BF6F3 /* TidePopoverRoot.swift in Sources */,
 				3638CC71F2D771B88B1A1A0F /* TidePreviews.swift in Sources */,
+				5718C55A25526FF69ECDEE15 /* TideUpdateController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,7 +321,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Tide/Info.plist;
@@ -308,7 +329,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.Tide;
 				PRODUCT_NAME = Tide;
 				SDKROOT = macosx;
@@ -395,7 +416,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Tide/Info.plist;
@@ -403,7 +424,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iamzjt.Tide;
 				PRODUCT_NAME = Tide;
 				SDKROOT = macosx;
@@ -523,6 +544,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BCBC22905439CD1BA89B5D19 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8C61506F193E534A13FA3748 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCBC22905439CD1BA89B5D19 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 90A75D909A340A469D54F9F1 /* Project object */;
 }

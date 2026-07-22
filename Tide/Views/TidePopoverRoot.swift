@@ -3,15 +3,18 @@ import SwiftUI
 struct TidePopoverRoot: View {
   var controller: PomodoroController
   var presentation: TidePresentationState
+  var updateController: TideUpdateController?
   var onPreferredHeightChange: ((CGFloat) -> Void)?
 
   init(
     controller: PomodoroController,
     presentation: TidePresentationState,
+    updateController: TideUpdateController? = nil,
     onPreferredHeightChange: ((CGFloat) -> Void)? = nil
   ) {
     self.controller = controller
     self.presentation = presentation
+    self.updateController = updateController
     self.onPreferredHeightChange = onPreferredHeightChange
   }
 
@@ -21,7 +24,8 @@ struct TidePopoverRoot: View {
       VStack(spacing: 0) {
         ClipoToolbar(
           controller: controller,
-          presentation: presentation
+          presentation: presentation,
+          updateController: updateController
         )
         page
       }
