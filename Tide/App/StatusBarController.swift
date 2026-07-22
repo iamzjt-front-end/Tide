@@ -74,6 +74,7 @@ final class StatusBarController: NSObject {
 
   private func showPopover() {
     guard let button = statusItem.button else { return }
+    presentation.prepareForPopoverPresentation()
     controller.reconcile()
     updatePopoverAppearance()
     setPopoverHeight(TidePopoverMetrics.height(for: presentation.page))
@@ -96,6 +97,15 @@ final class StatusBarController: NSObject {
     showPopover()
   }
 #endif
+
+  func showPopoverFromNotification() {
+    if popover.isShown {
+      guard let view = popover.contentViewController?.view else { return }
+      view.window?.makeKey()
+      return
+    }
+    showPopover()
+  }
 
   private func closePopover() {
     popover.performClose(nil)

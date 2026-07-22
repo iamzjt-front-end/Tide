@@ -28,7 +28,10 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     statusBarController = StatusBarController(controller: controller)
     Task { @MainActor [weak controller] in
       await Task.yield()
-      await controller?.requestNotificationAuthorizationIfNeeded()
+      guard let controller else { return }
+      if await controller.requestNotificationAuthorizationIfNeeded() {
+        controller.restoreActiveNotification()
+      }
     }
 
 #if DEBUG
@@ -69,7 +72,16 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification
   ) async -> UNNotificationPresentationOptions {
-    .banner
+    [.banner, .list, .sound]
+  }
+
+  nonisolated func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse
+  ) async {
+    await MainActor.run { [weak self] in
+      self?.statusBarController?.showPopoverFromNotification()
+    }
   }
 
 #if DEBUG
@@ -111,7 +123,7 @@ final class TideAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
   private func makeSampleArchive(now: Date = .now) -> PomodoroArchive {
     var archive = PomodoroArchive.fresh(now: now)
-    let study = FocusTag(name: "学习", colorHex: "#4DABF7")
+    let study = FocusTag(name: "阅读", colorHex: "#FFA94D")
     let writing = FocusTag(name: "写作", colorHex: "#F783AC")
     archive.focusTags = [study, writing]
     archive.configuration.selectedTagID = study.id

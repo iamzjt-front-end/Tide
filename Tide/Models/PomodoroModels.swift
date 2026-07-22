@@ -33,18 +33,22 @@ enum TimerMode: String, Codable, CaseIterable, Identifiable, Sendable {
 enum PomodoroPhase: String, Codable, Sendable {
   case focus
   case breakTime
+  case longBreak
+
+  var isBreak: Bool { self != .focus }
 
   var title: String {
     switch self {
     case .focus: "专注"
-    case .breakTime: "休息"
+    case .breakTime: "短休息"
+    case .longBreak: "长休息"
     }
   }
 
   var symbolName: String {
     switch self {
     case .focus: "timer"
-    case .breakTime: "cup.and.saucer.fill"
+    case .breakTime, .longBreak: "cup.and.saucer.fill"
     }
   }
 }
@@ -197,6 +201,7 @@ struct PomodoroConfiguration: Codable, Equatable, Sendable {
   var focusMinutes: Int = 25
   var targetSessions: Int = 4
   var breakSeconds: Int = 5 * 60
+  var longBreakSeconds: Int = 15 * 60
   var notificationsEnabled: Bool = true
   var appearance: TideAppearance = .system
   var selectedTagID: UUID?
@@ -205,13 +210,17 @@ struct PomodoroConfiguration: Codable, Equatable, Sendable {
   static let focusMinutesRange = 1...120
   static let targetSessionsRange = 1...12
   static let breakMinutesRange = 1...60
+  static let longBreakMinutesRange = 1...60
   static let breakSecondPresets = [300, 600, 900, 1_200, 1_800, 2_700]
+  static let longBreakSecondPresets = [900, 1_200, 1_500, 1_800, 2_700, 3_600]
 
   private enum CodingKeys: String, CodingKey {
     case focusMinutes
     case targetSessions
     case breakSeconds
     case breakMinutes
+    case longBreakSeconds
+    case longBreakMinutes
     case notificationsEnabled
     case appearance
     case selectedTagID
@@ -229,6 +238,11 @@ struct PomodoroConfiguration: Codable, Equatable, Sendable {
     } else {
       breakSeconds = (try values.decodeIfPresent(Int.self, forKey: .breakMinutes) ?? 5) * 60
     }
+    if let seconds = try values.decodeIfPresent(Int.self, forKey: .longBreakSeconds) {
+      longBreakSeconds = seconds
+    } else {
+      longBreakSeconds = (try values.decodeIfPresent(Int.self, forKey: .longBreakMinutes) ?? 15) * 60
+    }
     notificationsEnabled = try values.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
     appearance = try values.decodeIfPresent(TideAppearance.self, forKey: .appearance) ?? .system
     selectedTagID = try values.decodeIfPresent(UUID.self, forKey: .selectedTagID)
@@ -240,6 +254,7 @@ struct PomodoroConfiguration: Codable, Equatable, Sendable {
     try values.encode(focusMinutes, forKey: .focusMinutes)
     try values.encode(targetSessions, forKey: .targetSessions)
     try values.encode(breakSeconds, forKey: .breakSeconds)
+    try values.encode(longBreakSeconds, forKey: .longBreakSeconds)
     try values.encode(notificationsEnabled, forKey: .notificationsEnabled)
     try values.encode(appearance, forKey: .appearance)
     try values.encodeIfPresent(selectedTagID, forKey: .selectedTagID)
@@ -287,6 +302,10 @@ struct PomodoroArchive: Codable, Equatable, Sendable {
 }
 
 enum TidePalette {
+  static let brandAccentHex = "#4DABF7"
+  static let skipRestAccentHex = "#FF9F0A"
+  static let defaultAccentHex = brandAccentHex
+
   static let colors = [
     "#FF6B6B",
     "#FFA94D",

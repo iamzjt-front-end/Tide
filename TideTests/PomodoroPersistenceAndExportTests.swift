@@ -28,6 +28,7 @@ struct PomodoroPersistenceAndExportTests {
     let store = UserDefaultsPomodoroPersistence(defaults: defaults, key: "archive")
     var archive = PomodoroArchive.fresh(now: Date(timeIntervalSince1970: 10))
     archive.configuration.focusMinutes = 42
+    archive.configuration.longBreakSeconds = 1_800
     archive.focusTags = [FocusTag(name: "学习", colorHex: "#4DABF7")]
     archive.snapshot.runState = .paused
     archive.snapshot.remainingSeconds = 123
@@ -53,6 +54,7 @@ struct PomodoroPersistenceAndExportTests {
     let legacy = Data(#"{"focusMinutes":25,"targetSessions":4,"breakSeconds":300,"notificationsEnabled":true}"#.utf8)
     let migrated = try decoder.decode(PomodoroConfiguration.self, from: legacy)
     #expect(migrated.appearance == .system)
+    #expect(migrated.longBreakSeconds == 15 * 60)
   }
 
   @Test func controllerPersistsAppearanceSelection() {

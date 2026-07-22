@@ -5,11 +5,32 @@ struct TideBanner: Identifiable, Equatable {
   enum Kind: Equatable {
     case success
     case info
+    case phaseReady
   }
 
   var id = UUID()
   var text: String
   var kind: Kind
+}
+
+enum PomodoroTestNotificationState: Equatable {
+  case idle
+  case sending
+  case scheduled
+  case failed(String)
+
+  var statusText: String? {
+    switch self {
+    case .idle:
+      nil
+    case .sending:
+      "正在提交给 macOS…"
+    case .scheduled:
+      "已提交给 macOS，约 1 秒后出现；专注模式可能延迟横幅"
+    case .failed(let message):
+      "发送失败：\(message)"
+    }
+  }
 }
 
 @MainActor
@@ -20,6 +41,7 @@ final class PomodoroController {
   private(set) var banner: TideBanner?
   private(set) var persistentError: String?
   private(set) var notificationAuthorization: PomodoroNotificationAuthorization = .unknown
+  private(set) var testNotificationState: PomodoroTestNotificationState = .idle
 
   @ObservationIgnored private let persistence: PomodoroPersisting
   @ObservationIgnored private let notifier: PomodoroNotifying
@@ -51,9 +73,9 @@ final class PomodoroController {
       canPersist = false
     }
     let repairedSelection = ensureSelectionIntegrity()
-    normalizeIdleSnapshot()
+    let normalizedSnapshot = normalizeIdleSnapshot()
     reconcile(at: initialNow)
-    if repairedSelection { persist() }
+    if repairedSelection || normalizedSnapshot { persist() }
   }
 
   convenience init() {
@@ -127,17 +149,17 @@ final class PomodoroController {
     case let (.some(category), .some(tag)): "\(category) · \(tag)"
     case let (.some(category), .none): category
     case let (.none, .some(tag)): tag
-    case (.none, .none): "未使用标签"
+    case (.none, .none): "无标签"
     }
   }
 
   var currentAccentHex: String {
-    if archive.snapshot.phase == .breakTime { return "#69DB7C" }
+    if archive.snapshot.phase.isBreak { return "#69DB7C" }
     if archive.snapshot.runState != .idle,
        let locked = archive.snapshot.lockedTagColorHex ?? archive.snapshot.lockedCategoryColorHex {
       return locked
     }
-    return selectedTag?.colorHex ?? selectedCategory?.colorHex ?? "#FF6B6B"
+    return selectedTag?.colorHex ?? selectedCategory?.colorHex ?? TidePalette.defaultAccentHex
   }
 
   func statistics(for period: StatisticsPeriod) -> PomodoroStatisticsSnapshot {
@@ -207,12 +229,14 @@ final class PomodoroController {
       return
     }
 
-    if archive.snapshot.isShowingCompletion {
-      archive.snapshot.completedSessions = 0
-      archive.snapshot.roundStartedAt = nil
-      archive.snapshot.isShowingCompletion = false
+    switch archive.snapshot.phase {
+    case .focus:
+      startFocus(at: now, feedback: true)
+    case .breakTime, .longBreak:
+      let phase = archive.snapshot.phase
+      startBreak(at: now, phase: phase)
+      show("开始\(phase.title)", kind: .success)
     }
-    startFocus(at: now, feedback: true)
   }
 
   func pause(at now: Date = .now) {
@@ -280,14 +304,18 @@ final class PomodoroController {
           outcome: completionOutcomeForRound(startedAt: roundStartedAt)
         ))
       }
-      prepareIdleFocus(at: now, showingCompletion: completedRound)
+      prepareIdlePhase(completedRound ? .longBreak : .breakTime, at: now)
       show(
         "已完成本次专注，记录 \(TideFormatting.compactDuration(focusedSeconds))",
         kind: .success
       )
     } else {
-      prepareIdleFocus(at: now, showingCompletion: false)
-      show("休息已结束", kind: .info)
+      let completedLongBreak = archive.snapshot.phase == .longBreak
+      if completedLongBreak {
+        resetRoundProgress()
+      }
+      prepareIdlePhase(.focus, at: now)
+      show(completedLongBreak ? "长休息已结束，下一轮已就绪" : "休息已结束，专注已就绪", kind: .info)
     }
     persist()
   }
@@ -304,12 +332,16 @@ final class PomodoroController {
 
   func skipBreak(at now: Date = .now) {
     guard archive.snapshot.timerMode == .pomodoro,
-          archive.snapshot.phase == .breakTime,
-          archive.snapshot.runState != .idle
+          archive.snapshot.phase.isBreak
     else { return }
+    let skippedLongBreak = archive.snapshot.phase == .longBreak
     cancelActiveNotification()
-    startFocus(at: now, feedback: false)
-    show("已跳过休息", kind: .info)
+    if skippedLongBreak {
+      resetRoundProgress()
+    }
+    prepareIdlePhase(.focus, at: now)
+    persist()
+    show(skippedLongBreak ? "已跳过长休息，下一轮已就绪" : "已跳过休息，专注已就绪", kind: .info)
   }
 
   func beginNewRound(at now: Date = .now) {
@@ -362,6 +394,25 @@ final class PomodoroController {
     persist()
   }
 
+  func setLongBreakMinutes(_ value: Int) {
+    let clamped = min(
+      max(value, PomodoroConfiguration.longBreakMinutesRange.lowerBound),
+      PomodoroConfiguration.longBreakMinutesRange.upperBound
+    )
+    setLongBreakSeconds(clamped * 60)
+  }
+
+  func setLongBreakSeconds(_ value: Int) {
+    let clamped = min(max(value, 30), 60 * 60)
+    archive.configuration.longBreakSeconds = clamped
+    if archive.snapshot.phase == .longBreak,
+       archive.snapshot.runState == .idle {
+      archive.snapshot.phaseDurationSeconds = clamped
+      archive.snapshot.remainingSeconds = clamped
+    }
+    persist()
+  }
+
   func setNotificationsEnabled(_ enabled: Bool) {
     if !enabled {
       guard archive.configuration.notificationsEnabled else { return }
@@ -380,6 +431,31 @@ final class PomodoroController {
       let allowed = await self.requestNotificationAuthorizationIfNeeded(showFeedback: true)
       if allowed {
         self.scheduleActiveNotification()
+      }
+    }
+  }
+
+  func sendTestNotification() {
+    guard testNotificationState != .sending else { return }
+    testNotificationState = .sending
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      guard await self.requestNotificationAuthorizationIfNeeded(showFeedback: false) else {
+        self.testNotificationState = .failed("请先在系统设置中允许 Tide 通知")
+        return
+      }
+      let result = await self.notifier.schedule(
+        id: "Tide.Notification.Test.\(UUID().uuidString)",
+        title: "Tide 已准备好提醒你",
+        body: "专注或休息结束时，我会像这样轻轻提醒。",
+        at: .now.addingTimeInterval(1),
+        delivery: .completion
+      )
+      switch result {
+      case .scheduled:
+        self.testNotificationState = .scheduled
+      case .failed(let message):
+        self.testNotificationState = .failed(message)
       }
     }
   }
@@ -425,6 +501,10 @@ final class PomodoroController {
     }
   }
 
+  func restoreActiveNotification() {
+    scheduleActiveNotification()
+  }
+
   func setAppearance(_ appearance: TideAppearance) {
     guard archive.configuration.appearance != appearance else { return }
     archive.configuration.appearance = appearance
@@ -439,6 +519,7 @@ final class PomodoroController {
     archive.focusTags.append(tag)
     archive.configuration.selectedTagID = tag.id
     archive.configuration.selectedCategoryID = nil
+    syncActiveFocusContextWithSelection()
     persist()
     show("标签已添加", kind: .success)
     return true
@@ -450,6 +531,7 @@ final class PomodoroController {
     guard !cleaned.isEmpty else { return }
     archive.focusTags[index].name = cleaned
     archive.focusTags[index].colorHex = normalizedColor(colorHex)
+    syncActiveFocusContextWithSelection()
     persist()
   }
 
@@ -458,14 +540,15 @@ final class PomodoroController {
     if archive.configuration.selectedTagID == id {
       archive.configuration.selectedTagID = nil
     }
+    syncActiveFocusContextWithSelection()
     persist()
     show("标签已删除，历史记录保持不变", kind: .info)
   }
 
   func selectTag(_ id: UUID?) {
-    guard archive.snapshot.runState == .idle else { return }
     archive.configuration.selectedTagID = id
     archive.configuration.selectedCategoryID = nil
+    syncActiveFocusContextWithSelection()
     persist()
   }
 
@@ -477,6 +560,7 @@ final class PomodoroController {
     archive.categories.append(category)
     archive.configuration.selectedCategoryID = category.id
     archive.configuration.selectedTagID = nil
+    syncActiveFocusContextWithSelection()
     persist()
     show("分组已添加", kind: .success)
     return true
@@ -488,6 +572,7 @@ final class PomodoroController {
     guard !cleaned.isEmpty else { return }
     archive.categories[index].name = cleaned
     archive.categories[index].colorHex = normalizedColor(colorHex)
+    syncActiveFocusContextWithSelection()
     persist()
   }
 
@@ -496,14 +581,15 @@ final class PomodoroController {
     if archive.configuration.selectedCategoryID == id {
       archive.configuration.selectedCategoryID = nil
     }
+    syncActiveFocusContextWithSelection()
     persist()
     show("分组已删除，历史记录保持不变", kind: .info)
   }
 
   func selectCategory(_ id: UUID?) {
-    guard archive.snapshot.runState == .idle else { return }
     archive.configuration.selectedCategoryID = id
     archive.configuration.selectedTagID = nil
+    syncActiveFocusContextWithSelection()
     persist()
   }
 
@@ -524,8 +610,6 @@ final class PomodoroController {
   }
 
   private func startFocus(at date: Date, feedback: Bool) {
-    let tag = selectedTag
-    let category = selectedCategory
     let duration = archive.configuration.focusMinutes * 60
     if archive.snapshot.roundStartedAt == nil {
       archive.snapshot.roundStartedAt = date
@@ -537,12 +621,7 @@ final class PomodoroController {
     archive.snapshot.deadline = date.addingTimeInterval(Double(duration))
     archive.snapshot.startedAt = date
     archive.snapshot.activeRunID = UUID()
-    archive.snapshot.lockedTagID = tag?.id
-    archive.snapshot.lockedTagName = tag?.name
-    archive.snapshot.lockedTagColorHex = tag?.colorHex
-    archive.snapshot.lockedCategoryID = category?.id
-    archive.snapshot.lockedCategoryName = category?.name
-    archive.snapshot.lockedCategoryColorHex = category?.colorHex
+    syncActiveFocusContextWithSelection()
     archive.snapshot.isShowingCompletion = false
     archive.snapshot.lastUpdatedAt = date
     persist()
@@ -550,9 +629,12 @@ final class PomodoroController {
     if feedback { show("开始专注", kind: .success) }
   }
 
-  private func startBreak(at date: Date) {
-    let duration = archive.configuration.breakSeconds
-    archive.snapshot.phase = .breakTime
+  private func startBreak(at date: Date, phase: PomodoroPhase = .breakTime) {
+    precondition(phase.isBreak)
+    let duration = phase == .longBreak
+      ? archive.configuration.longBreakSeconds
+      : archive.configuration.breakSeconds
+    archive.snapshot.phase = phase
     archive.snapshot.runState = .running
     archive.snapshot.phaseDurationSeconds = duration
     archive.snapshot.remainingSeconds = duration
@@ -560,6 +642,7 @@ final class PomodoroController {
     archive.snapshot.startedAt = date
     archive.snapshot.activeRunID = UUID()
     clearLockedContext()
+    archive.snapshot.isShowingCompletion = false
     archive.snapshot.lastUpdatedAt = date
     persist()
     scheduleActiveNotification()
@@ -570,7 +653,7 @@ final class PomodoroController {
     case .focus:
       appendFocusSession(outcome: .completed, endedAt: date)
       archive.snapshot.completedSessions += 1
-      soundPlayer.playCompletion()
+      playCompletionFallbackIfNeeded()
       if archive.snapshot.completedSessions >= archive.configuration.targetSessions {
         if let roundStartedAt = archive.snapshot.roundStartedAt {
           archive.roundRecords.append(PomodoroRoundRecord(
@@ -581,27 +664,23 @@ final class PomodoroController {
             outcome: completionOutcomeForRound(startedAt: roundStartedAt)
           ))
         }
-        archive.snapshot.phase = .focus
-        archive.snapshot.runState = .idle
-        archive.snapshot.phaseDurationSeconds = archive.configuration.focusMinutes * 60
-        archive.snapshot.remainingSeconds = archive.snapshot.phaseDurationSeconds
-        archive.snapshot.deadline = nil
-        archive.snapshot.startedAt = nil
-        archive.snapshot.activeRunID = nil
-        archive.snapshot.isShowingCompletion = true
-        clearLockedContext()
-        archive.snapshot.lastUpdatedAt = date
-        persist()
-        show("本轮番茄钟已完成，休息一下吧", kind: .success)
+        prepareIdlePhase(.longBreak, at: date)
+        show("这一轮完成了，长休息已经准备好", kind: .phaseReady)
       } else {
-        startBreak(at: date)
-        show("专注完成，开始休息", kind: .success)
+        prepareIdlePhase(.breakTime, at: date)
+        show("做得不错，短休息已经准备好", kind: .phaseReady)
       }
     case .breakTime:
-      soundPlayer.playCompletion()
-      startFocus(at: date, feedback: false)
-      show("休息结束，继续专注", kind: .success)
+      playCompletionFallbackIfNeeded()
+      prepareIdlePhase(.focus, at: date)
+      show("休息好了，下一次专注已经准备好", kind: .phaseReady)
+    case .longBreak:
+      playCompletionFallbackIfNeeded()
+      resetRoundProgress()
+      prepareIdlePhase(.focus, at: date)
+      show("状态恢复了，新一轮已经准备好", kind: .phaseReady)
     }
+    persist()
   }
 
   @discardableResult
@@ -644,9 +723,13 @@ final class PomodoroController {
     }
   }
 
-  private func prepareIdleFocus(at date: Date, showingCompletion: Bool) {
-    let duration = archive.configuration.focusMinutes * 60
-    archive.snapshot.phase = .focus
+  private func prepareIdlePhase(_ phase: PomodoroPhase, at date: Date) {
+    let duration = switch phase {
+    case .focus: archive.configuration.focusMinutes * 60
+    case .breakTime: archive.configuration.breakSeconds
+    case .longBreak: archive.configuration.longBreakSeconds
+    }
+    archive.snapshot.phase = phase
     archive.snapshot.runState = .idle
     archive.snapshot.phaseDurationSeconds = duration
     archive.snapshot.remainingSeconds = duration
@@ -655,7 +738,7 @@ final class PomodoroController {
     archive.snapshot.stopwatchAnchor = nil
     archive.snapshot.startedAt = nil
     archive.snapshot.activeRunID = nil
-    archive.snapshot.isShowingCompletion = showingCompletion
+    archive.snapshot.isShowingCompletion = false
     archive.snapshot.lastUpdatedAt = date
     clearLockedContext()
   }
@@ -664,6 +747,12 @@ final class PomodoroController {
     archive.sessions.contains {
       $0.endedAt >= startedAt && $0.outcome.isEarlyCompletion
     } ? .completedEarly : .completed
+  }
+
+  private func resetRoundProgress() {
+    archive.snapshot.completedSessions = 0
+    archive.snapshot.roundStartedAt = nil
+    archive.snapshot.isShowingCompletion = false
   }
 
   private func clearLockedContext() {
@@ -675,16 +764,41 @@ final class PomodoroController {
     archive.snapshot.lockedCategoryColorHex = nil
   }
 
-  private func normalizeIdleSnapshot() {
-    guard archive.snapshot.runState == .idle else { return }
-    if archive.snapshot.timerMode == .pomodoro,
-       !archive.snapshot.isShowingCompletion {
-      let duration = archive.snapshot.phase == .focus
-        ? archive.configuration.focusMinutes * 60
-        : archive.configuration.breakSeconds
+  private func syncActiveFocusContextWithSelection() {
+    guard archive.snapshot.timerMode == .pomodoro,
+          archive.snapshot.phase == .focus,
+          archive.snapshot.runState != .idle
+    else { return }
+
+    let tag = selectedTag
+    let category = selectedCategory
+    archive.snapshot.lockedTagID = tag?.id
+    archive.snapshot.lockedTagName = tag?.name
+    archive.snapshot.lockedTagColorHex = tag?.colorHex
+    archive.snapshot.lockedCategoryID = category?.id
+    archive.snapshot.lockedCategoryName = category?.name
+    archive.snapshot.lockedCategoryColorHex = category?.colorHex
+    archive.snapshot.lastUpdatedAt = currentTime
+  }
+
+  @discardableResult
+  private func normalizeIdleSnapshot() -> Bool {
+    let previous = archive.snapshot
+    guard archive.snapshot.runState == .idle else { return false }
+    if archive.snapshot.timerMode == .pomodoro {
+      if archive.snapshot.isShowingCompletion {
+        archive.snapshot.phase = .longBreak
+        archive.snapshot.isShowingCompletion = false
+      }
+      let duration = switch archive.snapshot.phase {
+      case .focus: archive.configuration.focusMinutes * 60
+      case .breakTime: archive.configuration.breakSeconds
+      case .longBreak: archive.configuration.longBreakSeconds
+      }
       archive.snapshot.phaseDurationSeconds = duration
       archive.snapshot.remainingSeconds = duration
     }
+    return archive.snapshot != previous
   }
 
   private func ensureSelectionIntegrity() -> Bool {
@@ -721,27 +835,94 @@ final class PomodoroController {
           deadline > currentTime
     else { return }
     let phase = archive.snapshot.phase
-    let breakDuration = TideFormatting.compactDuration(archive.configuration.breakSeconds)
+    let completion = notificationContent(for: phase, delivery: .completion)
+    let gentleReminder = notificationContent(for: phase, delivery: .gentleReminder)
+    let gentleReminderDate = deadline.addingTimeInterval(-60)
     Task { @MainActor [weak self] in
       guard let self,
-            await self.requestNotificationAuthorizationIfNeeded(showFeedback: true)
+            await self.requestNotificationAuthorizationIfNeeded()
       else { return }
-      await self.notifier.schedule(
-        id: notificationID(runID),
-        title: phase == .focus ? "专注完成 · 该休息了" : "休息结束 · 回来专注吧",
-        body: phase == .focus ? "开始 \(breakDuration)休息，放松一下眼睛和肩颈。" : "准备好开始下一次专注。",
-        at: deadline
+      guard self.archive.snapshot.timerMode == .pomodoro,
+            self.archive.snapshot.runState == .running,
+            self.archive.snapshot.activeRunID == runID,
+            self.archive.snapshot.deadline == deadline
+      else { return }
+      self.notifier.cancel(id: self.legacyNotificationID(runID))
+      _ = await self.notifier.schedule(
+        id: self.notificationID(runID, delivery: .completion),
+        title: completion.title,
+        body: completion.body,
+        at: deadline,
+        delivery: .completion
       )
+      if gentleReminderDate.timeIntervalSince(self.currentTime) >= 1 {
+        _ = await self.notifier.schedule(
+          id: self.notificationID(runID, delivery: .gentleReminder),
+          title: gentleReminder.title,
+          body: gentleReminder.body,
+          at: gentleReminderDate,
+          delivery: .gentleReminder
+        )
+      }
+    }
+  }
+
+  private func notificationContent(
+    for phase: PomodoroPhase,
+    delivery: PomodoroNotificationDelivery
+  ) -> (title: String, body: String) {
+    if delivery == .gentleReminder {
+      return switch phase {
+      case .focus:
+        ("这一段专注快完成了", "还有 1 分钟，慢慢收尾就好。")
+      case .breakTime:
+        ("休息快结束了", "还有 1 分钟，准备好后再回来。")
+      case .longBreak:
+        ("长休息快结束了", "还有 1 分钟，新一轮不必着急。")
+      }
+    }
+
+    switch phase {
+    case .focus:
+      let completesRound = archive.snapshot.completedSessions + 1 >= archive.configuration.targetSessions
+      let seconds = completesRound
+        ? archive.configuration.longBreakSeconds
+        : archive.configuration.breakSeconds
+      let duration = TideFormatting.compactDuration(seconds)
+      return completesRound
+        ? ("这一轮完成了", "长休息 \(duration) 已准备好，慢慢放松一下。")
+        : ("做得不错，休息一下吧", "短休息 \(duration) 已准备好，准备好时再开始。")
+    case .breakTime:
+      return ("休息好了", "下一次专注已准备好，按自己的节奏开始。")
+    case .longBreak:
+      return ("状态恢复了", "新一轮专注已准备好，准备好时再开始。")
     }
   }
 
   private func cancelActiveNotification() {
     guard let runID = archive.snapshot.activeRunID else { return }
-    notifier.cancel(id: notificationID(runID))
+    notifier.cancel(id: legacyNotificationID(runID))
+    notifier.cancel(id: notificationID(runID, delivery: .gentleReminder))
+    notifier.cancel(id: notificationID(runID, delivery: .completion))
   }
 
-  private func notificationID(_ runID: UUID) -> String {
+  private func legacyNotificationID(_ runID: UUID) -> String {
     "Tide.Pomodoro.\(runID.uuidString)"
+  }
+
+  private func notificationID(
+    _ runID: UUID,
+    delivery: PomodoroNotificationDelivery
+  ) -> String {
+    let suffix = delivery == .gentleReminder ? "gentle" : "complete"
+    return "\(legacyNotificationID(runID)).\(suffix)"
+  }
+
+  private func playCompletionFallbackIfNeeded() {
+    guard !archive.configuration.notificationsEnabled ||
+            !notificationAuthorization.allowsNotifications
+    else { return }
+    soundPlayer.playCompletion()
   }
 
   private func normalizedColor(_ color: String) -> String {

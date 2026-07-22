@@ -97,6 +97,12 @@ struct ClipoSettingsPage: View {
                   .controlSize(.small)
                   .tint(.accentColor)
                   .focusable(false)
+                if controller.configuration.notificationsEnabled {
+                  Text("结束前 1 分钟轻提醒，结束时再播放一次提示音。")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(controller.notificationAuthorization.statusText)
                   .font(.system(size: 10, weight: .medium))
                   .foregroundStyle(
@@ -104,6 +110,35 @@ struct ClipoSettingsPage: View {
                       ? Color.orange
                       : Color.secondary
                   )
+                if controller.configuration.notificationsEnabled,
+                   controller.notificationAuthorization != .denied {
+                  Button {
+                    controller.sendTestNotification()
+                  } label: {
+                    Label(
+                      controller.testNotificationState == .sending
+                        ? "正在发送…"
+                        : "发送测试提醒",
+                      systemImage: controller.testNotificationState == .sending
+                        ? "arrow.triangle.2.circlepath"
+                        : "bell.badge"
+                    )
+                      .frame(maxWidth: .infinity)
+                      .contentShape(Capsule())
+                  }
+                  .clipoCapsuleButton()
+                  .disabled(controller.testNotificationState == .sending)
+                  .accessibilityLabel("发送一条 Tide 测试提醒")
+
+                  if let statusText = controller.testNotificationState.statusText {
+                    Label(statusText, systemImage: testNotificationStatusSymbol)
+                      .font(.system(size: 10, weight: .medium))
+                      .foregroundStyle(testNotificationStatusColor)
+                      .fixedSize(horizontal: false, vertical: true)
+                      .transition(.opacity.combined(with: .move(edge: .top)))
+                      .accessibilityLabel("测试提醒状态，\(statusText)")
+                  }
+                }
                 if controller.notificationAuthorization == .denied {
                   Button(action: openSystemNotificationSettings) {
                     Label("打开系统通知设置", systemImage: "arrow.up.forward.app")
@@ -181,6 +216,24 @@ struct ClipoSettingsPage: View {
           .padding(.horizontal, 28)
           .padding(.bottom, 24)
         }
+    }
+    .animation(.easeOut(duration: 0.18), value: controller.testNotificationState)
+  }
+
+  private var testNotificationStatusSymbol: String {
+    switch controller.testNotificationState {
+    case .idle: "bell"
+    case .sending: "clock"
+    case .scheduled: "checkmark.circle.fill"
+    case .failed: "exclamationmark.triangle.fill"
+    }
+  }
+
+  private var testNotificationStatusColor: Color {
+    switch controller.testNotificationState {
+    case .failed: .orange
+    case .scheduled: .accentColor
+    case .idle, .sending: .secondary
     }
   }
 
