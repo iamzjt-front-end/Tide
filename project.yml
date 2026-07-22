@@ -9,23 +9,27 @@ settings:
     SWIFT_VERSION: 6.0
     MACOSX_DEPLOYMENT_TARGET: 14.0
     CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: S4V6N8R7NP
 targets:
   Tide:
     type: application
     platform: macOS
     sources:
       - path: Tide
+        excludes:
+          - Info.plist
+          - AppIcon.icon
+          - Resources/TideAppIcon.icns
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.iamzjt.Tide
         PRODUCT_NAME: Tide
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Tide
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Tide/Info.plist
         MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 1
-        ENABLE_APP_SANDBOX: NO
+        CURRENT_PROJECT_VERSION: 14
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_APP_SANDBOX: NO
     scheme:
       testTargets:
         - TideTests
