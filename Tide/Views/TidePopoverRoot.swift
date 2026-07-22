@@ -33,7 +33,8 @@ struct TidePopoverRoot: View {
           .allowsHitTesting(false)
           .transition(.move(edge: .top).combined(with: .opacity))
           .task(id: banner.id) {
-            try? await Task.sleep(for: .seconds(1.7))
+            let duration = banner.kind == .phaseReady ? 4.2 : 1.7
+            try? await Task.sleep(for: .seconds(duration))
             controller.dismissBanner(id: banner.id)
           }
       }
@@ -63,7 +64,10 @@ struct TidePopoverRoot: View {
       }
     }
     .frame(width: TidePopoverMetrics.width, height: preferredHeight)
+    .tint(themeColor)
+    .accentColor(themeColor)
     .animation(.easeOut(duration: 0.16), value: controller.banner)
+    .animation(.easeInOut(duration: 0.18), value: controller.currentAccentHex)
     .onAppear {
       onPreferredHeightChange?(preferredHeight)
     }
@@ -76,11 +80,19 @@ struct TidePopoverRoot: View {
     TidePopoverMetrics.height(for: presentation.page)
   }
 
+  private var themeColor: Color {
+    Color(hex: controller.currentAccentHex)
+  }
+
   @ViewBuilder
   private var page: some View {
     switch presentation.page {
     case .timer:
-      ClipoTimerPage(controller: controller) {
+      ClipoTimerPage(
+        controller: controller,
+        entranceRevision: presentation.timerEntranceRevision,
+        entranceDelayMilliseconds: presentation.timerEntranceDelayMilliseconds
+      ) {
         presentation.page = .statistics
       }
     case .statistics:
@@ -95,18 +107,28 @@ private struct TidePopoverBanner: View {
   var body: some View {
     Label(
       banner.text,
-      systemImage: banner.kind == .success ? "checkmark.circle.fill" : "info.circle.fill"
+      systemImage: symbolName
     )
-    .font(.system(size: 9, weight: .semibold))
+    .font(.system(size: banner.kind == .phaseReady ? 10 : 9, weight: .semibold))
     .foregroundStyle(.primary.opacity(0.84))
     .lineLimit(1)
-    .padding(.horizontal, 9)
-    .frame(height: 22)
+    .padding(.horizontal, banner.kind == .phaseReady ? 12 : 9)
+    .frame(height: banner.kind == .phaseReady ? 28 : 22)
     .fixedSize(horizontal: true, vertical: false)
     .tideGlassCapsule(
-      tint: banner.kind == .success ? Color.green.opacity(0.18) : Color.accentColor.opacity(0.14)
+      tint: banner.kind == .info
+        ? Color.primary.opacity(0.06)
+        : Color.accentColor.opacity(banner.kind == .phaseReady ? 0.22 : 0.14)
     )
     .accessibilityElement(children: .combine)
     .accessibilityLabel("提示，\(banner.text)")
+  }
+
+  private var symbolName: String {
+    switch banner.kind {
+    case .success: "checkmark.circle.fill"
+    case .info: "info.circle.fill"
+    case .phaseReady: "bell.badge.fill"
+    }
   }
 }

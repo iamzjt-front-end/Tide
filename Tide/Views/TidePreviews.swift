@@ -11,7 +11,7 @@ private enum TidePreviewFactory {
     appearance: TideAppearance = .system
   ) -> PomodoroController {
     var archive = PomodoroArchive.fresh(now: now)
-    let tag = FocusTag(name: "学习", colorHex: "#4DABF7")
+    let tag = FocusTag(name: "阅读", colorHex: "#FFA94D")
     archive.focusTags = [tag, FocusTag(name: "写作", colorHex: "#F783AC")]
     archive.configuration.selectedTagID = tag.id
     archive.configuration.focusMinutes = 25
@@ -43,8 +43,8 @@ private enum TidePreviewFactory {
           plannedSeconds: 1_500,
           outcome: offset == 4 ? .completedEarly : .completed,
           tagID: tag.id,
-          tagName: offset.isMultiple(of: 2) ? "学习" : "写作",
-          tagColorHex: offset.isMultiple(of: 2) ? "#4DABF7" : "#F783AC"
+          tagName: offset.isMultiple(of: 2) ? "阅读" : "写作",
+          tagColorHex: offset.isMultiple(of: 2) ? "#FFA94D" : "#F783AC"
         )
       }
     }
@@ -104,19 +104,6 @@ private enum TidePreviewFactory {
     ClipoSettingsPage(controller: TidePreviewFactory.controller(withHistory: true))
   }
   .frame(width: 380, height: 530)
-}
-
-#Preview("停止确认") {
-  ClipoConfirmationPopover(
-    title: "停止专注",
-    message: "当前实际专注时长会保存为一次提前完成，并计入本轮。",
-    confirmTitle: "完成并停止",
-    destructive: true,
-    onCancel: {},
-    onConfirm: {}
-  )
-  .frame(width: 420, height: 250)
-  .background(ClipoBackground())
 }
 
 #Preview("高对比度") {

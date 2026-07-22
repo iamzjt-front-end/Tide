@@ -1,26 +1,48 @@
 import SwiftUI
 
 struct ClipoTimerPage: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.colorScheme) private var colorScheme
+
   var controller: PomodoroController
+  var entranceRevision: Int = 0
+  var entranceDelayMilliseconds: Int = 0
   var onShowStatistics: () -> Void
 
   @State private var showingStopConfirmation = false
   @State private var showingTagCreator = false
   @State private var showingLabelPicker = false
+  @State private var dialVisible = false
+  @State private var contextVisible = false
+  @State private var controlsVisible = false
+  @State private var ringEntranceProgress = 0.0
 
   var body: some View {
     ZStack {
       VStack(spacing: 0) {
-        PomodoroDial(controller: controller)
+        PomodoroDial(
+          controller: controller,
+          entranceProgress: ringEntranceProgress
+        )
           .frame(height: 292, alignment: .top)
+          .opacity(dialVisible ? 1 : 0)
+          .scaleEffect(dialVisible ? 1 : 0.92, anchor: .center)
+          .offset(y: dialVisible ? 0 : 14)
+          .blur(radius: dialVisible ? 0 : 4)
 
         contextRow
           .frame(height: 42)
           .padding(.top, 6)
           .padding(.bottom, 24)
+          .opacity(contextVisible ? 1 : 0)
+          .scaleEffect(contextVisible ? 1 : 0.96)
+          .offset(y: contextVisible ? 0 : 13)
 
         controls
           .padding(.top, 5)
+          .opacity(controlsVisible ? 1 : 0)
+          .scaleEffect(controlsVisible ? 1 : 0.95, anchor: .top)
+          .offset(y: controlsVisible ? 0 : 17)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
@@ -41,18 +63,67 @@ struct ClipoTimerPage: View {
         .offset(y: 18)
         .transition(.scale(scale: 0.96).combined(with: .opacity))
       }
-
     }
     .onChange(of: controller.snapshot.runState) { _, newState in
       if newState == .idle { showingStopConfirmation = false }
+    }
+    .task(id: entranceRevision) {
+      await animateEntrance()
+    }
+  }
+
+  @MainActor
+  private func animateEntrance() async {
+    dialVisible = false
+    contextVisible = false
+    controlsVisible = false
+    ringEntranceProgress = 0
+
+    guard !reduceMotion else {
+      dialVisible = true
+      contextVisible = true
+      controlsVisible = true
+      ringEntranceProgress = 1
+      return
+    }
+
+    await Task.yield()
+    guard !Task.isCancelled else { return }
+    if entranceDelayMilliseconds > 0 {
+      guard await entrancePause(for: .milliseconds(entranceDelayMilliseconds)) else { return }
+    }
+
+    withAnimation(.smooth(duration: 0.52)) {
+      dialVisible = true
+      ringEntranceProgress = 1
+    }
+    guard await entrancePause(for: .milliseconds(120)) else { return }
+
+    withAnimation(.smooth(duration: 0.36)) {
+      contextVisible = true
+    }
+    guard await entrancePause(for: .milliseconds(100)) else { return }
+
+    withAnimation(.smooth(duration: 0.38)) {
+      controlsVisible = true
+    }
+  }
+
+  private func entrancePause(for duration: Duration) async -> Bool {
+    do {
+      try await Task.sleep(for: duration)
+      return !Task.isCancelled
+    } catch {
+      return false
     }
   }
 
   private var contextRow: some View {
     HStack(spacing: 10) {
       selectionControl
-        .frame(width: 108)
+        .layoutPriority(1)
       todaySummary
+        .frame(minWidth: 160)
     }
     .padding(.horizontal, 34)
   }
@@ -61,12 +132,20 @@ struct ClipoTimerPage: View {
     let today = controller.statistics(for: .today)
     return Button(action: onShowStatistics) {
       HStack(spacing: 6) {
-        Image(systemName: "clock")
-        Text(TideFormatting.compactDuration(today.totalFocusSeconds))
+        HStack(spacing: 4) {
+          Image(systemName: "clock")
+            .foregroundStyle(Color.accentColor)
+          Text(TideFormatting.compactDuration(today.totalFocusSeconds))
+            .foregroundStyle(.primary)
+        }
         Text("·")
           .foregroundStyle(.tertiary)
-        Image(systemName: "checkmark.circle")
-        Text("\(today.completedCount) 个")
+        HStack(spacing: 4) {
+          Image(systemName: "checkmark.circle.fill")
+            .foregroundStyle(Color.accentColor)
+          Text("\(today.completedCount) 个")
+            .foregroundStyle(.primary)
+        }
         Spacer(minLength: 2)
         Image(systemName: "chevron.right")
           .font(.system(size: 8, weight: .bold))
@@ -81,73 +160,60 @@ struct ClipoTimerPage: View {
     }
     .buttonStyle(.plain)
     .focusable(false)
-    .tideGlassCapsule(interactive: true)
+    .tideGlassCapsule(
+      tint: Color.accentColor.opacity(colorScheme == .dark ? 0.045 : 0.1),
+      interactive: true
+    )
     .help("查看专注统计")
     .accessibilityLabel("查看统计，今日专注 \(TideFormatting.compactDuration(today.totalFocusSeconds))，完成 \(today.completedCount) 个")
     .accessibilityElement(children: .combine)
   }
 
   private var selectionControl: some View {
-    Group {
-      if controller.snapshot.runState == .idle {
-        Button {
-          showingLabelPicker = true
-        } label: {
-          HStack(spacing: 6) {
-            Circle()
-              .fill(Color(hex: controller.selectedFocusLabelColorHex ?? "#868E96"))
-              .frame(width: 6, height: 6)
-            Text(controller.selectedFocusLabelName ?? "选择标签")
-              .lineLimit(1)
-            Image(systemName: "chevron.down")
-              .font(.system(size: 7, weight: .bold))
-              .foregroundStyle(.tertiary)
-          }
-          .font(.system(size: 10, weight: .semibold))
-          .foregroundStyle(.primary)
-          .padding(.horizontal, 10)
-          .frame(maxWidth: .infinity)
-          .frame(height: 31)
-          .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .tideGlassCapsule(
-          tint: Color(hex: controller.selectedFocusLabelColorHex ?? "#868E96").opacity(0.24),
-          interactive: true
-        )
-        .popover(isPresented: $showingLabelPicker, arrowEdge: .bottom) {
-          FocusLabelPickerPopover(
-            controller: controller,
-            onCreate: {
-              showingLabelPicker = false
-              Task { @MainActor in
-                await Task.yield()
-                showingTagCreator = true
-              }
-            },
-            onClose: { showingLabelPicker = false }
-          )
-        }
-        .help("选择专注标签")
-        .accessibilityLabel("专注标签，\(controller.selectedFocusLabelName ?? "未选择")")
-      } else {
-        HStack(spacing: 6) {
-          Image(systemName: "lock.fill")
-          Text(controller.lockedContextText)
-            .lineLimit(1)
-          Spacer()
-        }
-        .font(.system(size: 10, weight: .medium))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 9)
-        .frame(maxWidth: .infinity)
-        .frame(height: 31)
-        .tideGlassCapsule()
-        .accessibilityLabel("当前计时标签已锁定，\(controller.lockedContextText)")
+    Button {
+      showingLabelPicker = true
+    } label: {
+      HStack(spacing: 6) {
+        Circle()
+          .fill(Color(hex: controller.selectedFocusLabelColorHex ?? "#868E96"))
+          .frame(width: 6, height: 6)
+        Text(controller.selectedFocusLabelName ?? "无标签")
+          .lineLimit(1)
+          .truncationMode(.tail)
+        Image(systemName: "chevron.down")
+          .font(.system(size: 7, weight: .bold))
+          .foregroundStyle(.tertiary)
       }
+      .font(.system(size: 10, weight: .semibold))
+      .foregroundStyle(.primary)
+      .padding(.horizontal, 10)
+      .frame(height: 31)
+      .contentShape(Capsule())
     }
-    .frame(maxWidth: .infinity)
+    .buttonStyle(.plain)
+    .focusable(false)
+    .tideGlassCapsule(
+      tint: Color(hex: controller.selectedFocusLabelColorHex ?? "#868E96")
+        .opacity(colorScheme == .dark ? 0.14 : 0.24),
+      interactive: true
+    )
+    .popover(isPresented: $showingLabelPicker, arrowEdge: .bottom) {
+      FocusLabelPickerPopover(
+        controller: controller,
+        onCreate: {
+          showingLabelPicker = false
+          Task { @MainActor in
+            await Task.yield()
+            showingTagCreator = true
+          }
+        },
+        onClose: { showingLabelPicker = false }
+      )
+    }
+    .help(controller.snapshot.runState == .idle ? "选择专注标签" : "更改当前专注标签")
+    .accessibilityLabel(
+      "专注标签，\(controller.selectedFocusLabelName ?? "无标签")，可更改"
+    )
   }
 
   private var controls: some View {
@@ -157,50 +223,65 @@ struct ClipoTimerPage: View {
           symbol: primarySymbol,
           label: primaryTitle,
           enabled: true,
-          prominent: true,
-          destructive: false,
+          role: .primary,
           action: primaryAction
         )
 
-        ClipoControlButton(
-          symbol: "stop.fill",
-          label: "停止",
-          enabled: controller.snapshot.runState != .idle,
-          prominent: false,
-          destructive: true
-        ) {
-          showingStopConfirmation = true
-        }
-        .popover(isPresented: $showingStopConfirmation, arrowEdge: .bottom) {
-          ClipoConfirmationPopover(
-            title: controller.snapshot.timerMode == .stopwatch ? "重置正计时" : "停止专注",
-            message: controller.snapshot.timerMode == .stopwatch
-              ? "当前累计时间将归零。"
-              : "当前实际专注时长会保存为一次提前完成，并计入本轮。",
-            confirmTitle: controller.snapshot.timerMode == .stopwatch ? "重置" : "完成并停止",
-            destructive: true,
-            onCancel: { showingStopConfirmation = false },
-            onConfirm: {
-              showingStopConfirmation = false
-              controller.stop()
-            }
-          )
+        if isBreakPhase {
+          ClipoControlButton(
+            symbol: "forward.end.fill",
+            label: "跳过休息",
+            enabled: true,
+            role: .skipRest
+          ) {
+            controller.skipBreak()
+          }
+        } else {
+          ClipoControlButton(
+            symbol: "stop.fill",
+            label: "停止",
+            enabled: controller.snapshot.runState != .idle,
+            role: .destructive
+          ) {
+            showingStopConfirmation = true
+          }
+          .popover(isPresented: $showingStopConfirmation, arrowEdge: .bottom) {
+            ClipoConfirmationPopover(
+              title: stopConfirmationTitle,
+              message: stopConfirmationMessage,
+              confirmTitle: stopConfirmationButtonTitle,
+              destructive: true,
+              onCancel: { showingStopConfirmation = false },
+              onConfirm: {
+                showingStopConfirmation = false
+                controller.stop()
+              }
+            )
+          }
         }
       }
     }
   }
 
+  private var isBreakPhase: Bool {
+    controller.snapshot.timerMode == .pomodoro && controller.snapshot.phase.isBreak
+  }
+
   private var primaryTitle: String {
-    if controller.snapshot.isShowingCompletion { return "本轮完成" }
     return switch controller.snapshot.runState {
-    case .idle: "开始"
+    case .idle:
+      if controller.snapshot.timerMode == .pomodoro,
+         controller.snapshot.phase.isBreak {
+        "开始\(controller.snapshot.phase.title)"
+      } else {
+        "开始"
+      }
     case .running: "暂停"
     case .paused: "继续"
     }
   }
 
   private var primarySymbol: String {
-    if controller.snapshot.isShowingCompletion { return "arrow.clockwise" }
     return switch controller.snapshot.runState {
     case .running: "pause.fill"
     case .idle, .paused: "play.fill"
@@ -208,15 +289,33 @@ struct ClipoTimerPage: View {
   }
 
   private func primaryAction() {
-    if controller.snapshot.isShowingCompletion {
-      controller.beginNewRound()
-      return
-    }
     switch controller.snapshot.runState {
     case .idle: controller.start()
     case .running: controller.pause()
     case .paused: controller.resume()
     }
+  }
+
+  private var stopConfirmationTitle: String {
+    if controller.snapshot.timerMode == .stopwatch { return "重置正计时" }
+    return controller.snapshot.phase == .focus
+      ? "停止专注"
+      : "结束\(controller.snapshot.phase.title)"
+  }
+
+  private var stopConfirmationMessage: String {
+    if controller.snapshot.timerMode == .stopwatch {
+      return "当前累计时间将归零。"
+    }
+    if controller.snapshot.phase == .focus {
+      return "当前实际专注时长会保存为一次提前完成，并计入本轮。"
+    }
+    return "结束后，下一次专注会进入待开始状态。"
+  }
+
+  private var stopConfirmationButtonTitle: String {
+    if controller.snapshot.timerMode == .stopwatch { return "重置" }
+    return controller.snapshot.phase == .focus ? "完成并停止" : "结束"
   }
 }
 
@@ -225,8 +324,10 @@ private struct PomodoroDial: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var controller: PomodoroController
+  var entranceProgress: Double = 1
 
-  @State private var showingBreakEditor = false
+  @Namespace private var modeSwitchNamespace
+  @State private var editingBreakKind: BreakDurationKind?
   @State private var showingRoundEditor = false
   @State private var previewMinutes: Int?
   @State private var lastDragMinutes: Int?
@@ -236,7 +337,7 @@ private struct PomodoroDial: View {
   private let ringWidth: CGFloat = 15
 
   private var accent: Color {
-    controller.snapshot.phase == .breakTime
+    controller.snapshot.phase.isBreak
       ? Color(hex: "#69DB7C")
       : Color(hex: controller.currentAccentHex)
   }
@@ -260,6 +361,12 @@ private struct PomodoroDial: View {
 
   private var displayedTime: String { TideFormatting.clock(displayedSeconds) }
 
+  private var isModeSelectionExpanded: Bool {
+    controller.snapshot.runState == .idle &&
+      (controller.snapshot.timerMode == .stopwatch || controller.snapshot.phase == .focus) &&
+      !controller.snapshot.isShowingCompletion
+  }
+
   private var dialValueAnimation: Animation? {
     guard !reduceMotion else { return nil }
     return canAdjustFocusDuration
@@ -282,11 +389,13 @@ private struct PomodoroDial: View {
   private var trackColor: Color {
     controller.snapshot.timerMode == .stopwatch
       ? Color.primary.opacity(0.09)
-      : accent.opacity(0.15)
+      : accent.opacity(colorScheme == .dark ? 0.1 : 0.15)
   }
 
   private var dialGlassTint: Color? {
-    controller.snapshot.timerMode == .stopwatch ? nil : accent.opacity(0.08)
+    controller.snapshot.timerMode == .stopwatch
+      ? nil
+      : accent.opacity(colorScheme == .dark ? 0.04 : 0.08)
   }
 
   var body: some View {
@@ -294,7 +403,7 @@ private struct PomodoroDial: View {
       Circle()
         .fill(
           TideTheme.raisedSurface(colorScheme)
-            .opacity(colorScheme == .dark ? 0.22 : 0.56)
+            .opacity(colorScheme == .dark ? 0.1 : 0.56)
         )
         .tideGlassCircle(tint: dialGlassTint)
 
@@ -302,16 +411,28 @@ private struct PomodoroDial: View {
         .strokeBorder(trackColor, lineWidth: 15)
 
       if let coloredRingFraction, coloredRingFraction > 0 {
+        let visibleRingFraction = coloredRingFraction * entranceProgress
         Circle()
-          .trim(from: 0, to: coloredRingFraction)
-          .stroke(accent, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
+          .trim(from: 0, to: visibleRingFraction)
+          .stroke(
+            accent.opacity(colorScheme == .dark ? 0.9 : 1),
+            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+          )
           .padding(ringInset)
           .rotationEffect(.degrees(-90))
           .shadow(
-            color: accent.opacity(controller.snapshot.runState == .running ? 0.48 : 0),
-            radius: 12
+            color: accent.opacity(
+              controller.snapshot.runState == .running
+                ? (colorScheme == .dark ? 0.2 : 0.48)
+                : 0
+            ),
+            radius: colorScheme == .dark ? 9 : 12
           )
           .animation(dialValueAnimation, value: coloredRingFraction)
+          .animation(
+            reduceMotion ? nil : .smooth(duration: 0.56),
+            value: entranceProgress
+          )
       }
 
       DialTickShape(major: false)
@@ -340,7 +461,8 @@ private struct PomodoroDial: View {
           .frame(height: 80, alignment: .top)
       }
 
-      if canAdjustFocusDuration, let coloredRingFraction {
+      if let coloredRingFraction, coloredRingFraction > 0 {
+        let visibleRingFraction = coloredRingFraction * entranceProgress
         Circle()
           .fill(accent)
           .frame(width: 18, height: 18)
@@ -351,9 +473,15 @@ private struct PomodoroDial: View {
           }
           .shadow(color: accent.opacity(0.35), radius: 5, y: 2)
           .offset(y: -(dialSize / 2 - ringInset))
-          .rotationEffect(.degrees(coloredRingFraction * 360))
+          .rotationEffect(.degrees(visibleRingFraction * 360))
+          .opacity(entranceProgress)
           .animation(dialValueAnimation, value: coloredRingFraction)
+          .animation(
+            reduceMotion ? nil : .smooth(duration: 0.56),
+            value: entranceProgress
+          )
           .allowsHitTesting(false)
+          .accessibilityHidden(true)
       }
 
       if canAdjustFocusDuration {
@@ -370,9 +498,9 @@ private struct PomodoroDial: View {
     }
     .frame(width: dialSize, height: dialSize)
     .shadow(
-      color: Color.black.opacity(colorScheme == .dark ? 0.24 : 0.07),
-      radius: 20,
-      y: 10
+      color: Color.black.opacity(colorScheme == .dark ? 0.15 : 0.07),
+      radius: colorScheme == .dark ? 15 : 20,
+      y: colorScheme == .dark ? 7 : 10
     )
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     .onChange(of: controller.snapshot.timerMode) { _, _ in
@@ -387,67 +515,147 @@ private struct PomodoroDial: View {
       .monospacedDigit()
       .foregroundStyle(.primary)
       .frame(width: 88, height: 34)
-      .tideGlassCapsule(interactive: controller.snapshot.runState == .idle)
+      .tideGlassCapsule(
+        tint: colorScheme == .dark ? Color.white.opacity(0.025) : nil,
+        interactive: controller.snapshot.runState == .idle
+      )
   }
 
   private var modeSwitch: some View {
-    HStack(spacing: 8) {
-      ForEach(TimerMode.allCases) { mode in
-        let selected = controller.snapshot.timerMode == mode
-        Button {
-          controller.setTimerMode(mode)
-        } label: {
-          Text(mode.title)
-            .font(.system(size: 11, weight: selected ? .semibold : .regular))
-            .foregroundStyle(selected ? Color.white : Color.primary.opacity(0.52))
-            .padding(.horizontal, 12)
-            .frame(height: 29)
-            .contentShape(Capsule())
+    ZStack {
+      if isModeSelectionExpanded {
+        HStack(spacing: 8) {
+          ForEach(TimerMode.allCases) { mode in
+            interactiveModeOption(mode)
+              .matchedGeometryEffect(id: mode, in: modeSwitchNamespace)
+          }
         }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .tideGlassCapsule(
-          tint: selected ? Color.accentColor.opacity(0.46) : nil,
-          interactive: controller.snapshot.runState == .idle
-        )
-        .disabled(controller.snapshot.runState != .idle)
-        .accessibilityValue(selected ? "已选择" : "未选择")
+        .transition(.opacity)
+      } else {
+        modePill(controller.snapshot.timerMode, selected: true, interactive: false)
+          .matchedGeometryEffect(
+            id: controller.snapshot.timerMode,
+            in: modeSwitchNamespace
+          )
+          .accessibilityElement()
+          .accessibilityLabel("\(collapsedModeTitle)，当前阶段")
       }
+    }
+    .frame(width: 132, height: 29)
+    .animation(
+      reduceMotion ? nil : .snappy(duration: 0.32, extraBounce: 0),
+      value: isModeSelectionExpanded
+    )
+  }
+
+  private func interactiveModeOption(_ mode: TimerMode) -> some View {
+    let selected = controller.snapshot.timerMode == mode
+    return Button {
+      controller.setTimerMode(mode)
+    } label: {
+      modePill(mode, selected: selected, interactive: true)
+    }
+    .buttonStyle(.plain)
+    .focusable(false)
+    .accessibilityValue(selected ? "已选择" : "未选择")
+  }
+
+  private func modePill(_ mode: TimerMode, selected: Bool, interactive: Bool) -> some View {
+    Text(modeTitle(for: mode))
+      .font(.system(size: 11, weight: selected ? .semibold : .regular))
+      .foregroundStyle(selected ? Color.white : Color.primary.opacity(0.52))
+      .padding(.horizontal, 12)
+      .frame(height: 29)
+      .contentShape(Capsule())
+      .tideGlassCapsule(
+        tint: selected
+          ? Color.accentColor.opacity(colorScheme == .dark ? 0.32 : 0.46)
+          : nil,
+        interactive: interactive
+      )
+  }
+
+  private var collapsedModeTitle: String {
+    modeTitle(for: controller.snapshot.timerMode)
+  }
+
+  private func modeTitle(for mode: TimerMode) -> String {
+    if mode == .pomodoro,
+       !isModeSelectionExpanded,
+       controller.snapshot.phase.isBreak {
+      return controller.snapshot.phase.title
+    }
+    return mode.title
+  }
+
+  private func breakLabel(for kind: BreakDurationKind) -> String {
+    let seconds = kind.seconds(in: controller.configuration)
+    return seconds < 60 ? "\(seconds)s" : "\(seconds / 60)min"
+  }
+
+  private var activeBreakSummary: String {
+    switch controller.snapshot.phase {
+    case .focus:
+      "短休息 \(breakLabel(for: .shortBreak)) · 长休息 \(breakLabel(for: .longBreak))"
+    case .breakTime:
+      "短休息 \(breakLabel(for: .shortBreak))"
+    case .longBreak:
+      "长休息 \(breakLabel(for: .longBreak))"
     }
   }
 
-  private var breakLabel: String {
-    let seconds = controller.configuration.breakSeconds
-    return seconds < 60 ? "\(seconds)s" : "\(seconds / 60)min"
+  @ViewBuilder
+  private var breakDurationControls: some View {
+    if controller.snapshot.runState == .idle {
+      HStack(spacing: 6) {
+        ForEach(BreakDurationKind.allCases) { kind in
+          Button {
+            editingBreakKind = kind
+          } label: {
+            Text("\(kind.compactTitle) \(breakLabel(for: kind))")
+              .padding(.horizontal, 9)
+              .frame(height: 25)
+              .contentShape(Capsule())
+          }
+          .buttonStyle(.plain)
+          .focusable(false)
+          .tideGlassCapsule(interactive: true)
+          .accessibilityLabel("设置\(kind.title)")
+          .popover(
+            isPresented: breakDurationPopoverBinding(for: kind),
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .bottom
+          ) {
+            BreakDurationPopover(controller: controller, kind: kind) {
+              editingBreakKind = nil
+            }
+          }
+        }
+      }
+    } else {
+      Text(activeBreakSummary)
+        .frame(height: 25)
+    }
+  }
+
+  private func breakDurationPopoverBinding(for kind: BreakDurationKind) -> Binding<Bool> {
+    Binding(
+      get: { editingBreakKind == kind },
+      set: { isPresented in
+        if isPresented {
+          editingBreakKind = kind
+        } else if editingBreakKind == kind {
+          editingBreakKind = nil
+        }
+      }
+    )
   }
 
   @ViewBuilder
   private var detailRegion: some View {
     if controller.snapshot.timerMode == .pomodoro {
       VStack(spacing: 4) {
-        Group {
-          if controller.snapshot.runState == .idle {
-            Button {
-              showingBreakEditor = true
-            } label: {
-              Text("休息 \(breakLabel)")
-                .padding(.horizontal, 10)
-                .frame(height: 25)
-                .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .focusable(false)
-            .tideGlassCapsule(interactive: true)
-            .popover(isPresented: $showingBreakEditor, arrowEdge: .bottom) {
-              BreakDurationPopover(controller: controller) {
-                showingBreakEditor = false
-              }
-            }
-          } else {
-            Text("休息 \(breakLabel)")
-              .frame(height: 25)
-          }
-        }
+        breakDurationControls
         .font(.system(size: 12, weight: .semibold))
         .foregroundStyle(.secondary)
 
@@ -607,23 +815,54 @@ enum PomodoroDialScale {
   }
 }
 
+private enum ClipoControlRole {
+  case primary
+  case skipRest
+  case destructive
+}
+
 private struct ClipoControlButton: View {
   var symbol: String
   var label: String
   var enabled: Bool
-  var prominent: Bool
-  var destructive: Bool
+  var role: ClipoControlRole
   var action: () -> Void
 
   var body: some View {
     Button(action: action) {
-      VStack(spacing: 8) {
+      ClipoControlSurface(
+        symbol: symbol,
+        label: label,
+        enabled: enabled,
+        role: role
+      )
+    }
+    .buttonStyle(ClipoControlPressStyle())
+    .focusable(false)
+    .disabled(!enabled)
+    .accessibilityLabel(label)
+    .help(label)
+  }
+}
+
+private struct ClipoControlSurface: View {
+  @Environment(\.colorScheme) private var colorScheme
+
+  var symbol: String
+  var label: String
+  var enabled: Bool
+  var role: ClipoControlRole
+
+  var body: some View {
+    VStack(spacing: 8) {
+      ZStack {
         ZStack {
           Image(systemName: symbol)
             .font(.system(size: 25, weight: .semibold))
             .foregroundStyle(foreground)
+            .shadow(color: symbolShadowColor, radius: 1.5, y: 1)
         }
-        .frame(width: 118, height: 58)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tideGlassRect(
           cornerRadius: 22,
           tint: tint,
@@ -636,7 +875,7 @@ private struct ClipoControlButton: View {
               .fill(
                 LinearGradient(
                   colors: [
-                    Color.white.opacity(enabled ? 0.28 : 0.2),
+                    Color.white.opacity(enabled ? (colorScheme == .dark ? 0.19 : 0.28) : 0.14),
                     Color.white.opacity(0.035),
                     Color.black.opacity(enabled ? 0.08 : 0.045),
                   ],
@@ -650,8 +889,8 @@ private struct ClipoControlButton: View {
               .strokeBorder(
                 LinearGradient(
                   colors: [
-                    Color.white.opacity(enabled ? 0.82 : 0.58),
-                    Color.white.opacity(0.2),
+                    Color.white.opacity(enabled ? (colorScheme == .dark ? 0.46 : 0.82) : 0.36),
+                    Color.white.opacity(colorScheme == .dark ? 0.12 : 0.2),
                     Color.black.opacity(enabled ? 0.16 : 0.09),
                   ],
                   startPoint: .topLeading,
@@ -661,7 +900,11 @@ private struct ClipoControlButton: View {
               )
 
             Capsule()
-              .fill(Color.white.opacity(enabled ? 0.27 : 0.16))
+              .fill(
+                Color.white.opacity(
+                  enabled ? (colorScheme == .dark ? 0.15 : 0.27) : 0.1
+                )
+              )
               .frame(width: 72, height: 2)
               .blur(radius: 0.35)
               .frame(maxHeight: .infinity, alignment: .top)
@@ -669,45 +912,82 @@ private struct ClipoControlButton: View {
           }
           .allowsHitTesting(false)
         }
-        .shadow(color: Color.white.opacity(enabled ? 0.13 : 0.08), radius: 2, y: -1)
-        .shadow(color: glowColor, radius: enabled ? 20 : 12, y: 9)
-
-        Text(label)
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(titleForeground)
       }
-      .contentShape(Rectangle())
+      .frame(width: 118, height: 58)
+      .shadow(
+        color: Color.white.opacity(
+          enabled ? (colorScheme == .dark ? 0.07 : 0.13) : 0.05
+        ),
+        radius: 2,
+        y: -1
+      )
+      .shadow(
+        color: glowColor,
+        radius: enabled ? (colorScheme == .dark ? 14 : 20) : 10,
+        y: colorScheme == .dark ? 6 : 9
+      )
+
+      Text(label)
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(titleForeground)
     }
-    .buttonStyle(ClipoControlPressStyle())
-    .focusable(false)
-    .disabled(!enabled)
-    .accessibilityLabel(label)
-    .help(label)
+    .contentShape(Rectangle())
   }
 
   private var foreground: Color {
     guard enabled else { return Color.secondary.opacity(0.4) }
-    if destructive || prominent { return .white }
-    return .primary
+    switch role {
+    case .primary, .destructive:
+      return .white
+    case .skipRest:
+      return Color.white.opacity(0.96)
+    }
   }
 
   private var titleForeground: Color {
     guard enabled else { return Color.secondary.opacity(0.45) }
-    return destructive ? Color.red.opacity(0.86) : Color.primary.opacity(0.78)
+    if role == .destructive {
+      return colorScheme == .dark
+        ? Color(hex: "#FF7180")
+        : Color.red.opacity(0.86)
+    }
+    return Color.primary.opacity(0.78)
   }
 
   private var tint: Color? {
     guard enabled else { return nil }
-    if destructive { return Color.red.opacity(0.58) }
-    if prominent { return Color.accentColor.opacity(0.64) }
-    return nil
+    switch role {
+    case .destructive:
+      return colorScheme == .dark
+        ? Color(hex: "#FF7180").opacity(0.68)
+        : Color.red.opacity(0.58)
+    case .primary:
+      return Color.accentColor.opacity(colorScheme == .dark ? 0.54 : 0.64)
+    case .skipRest:
+      return Color(hex: TidePalette.skipRestAccentHex)
+        .opacity(colorScheme == .dark ? 0.42 : 0.52)
+    }
   }
 
   private var glowColor: Color {
     guard enabled else { return Color.black.opacity(0.08) }
-    if destructive { return Color.red.opacity(0.24) }
-    if prominent { return Color.accentColor.opacity(0.3) }
-    return Color.black.opacity(0.1)
+    switch role {
+    case .destructive:
+      return colorScheme == .dark
+        ? Color(hex: "#FF6174").opacity(0.15)
+        : Color.red.opacity(0.24)
+    case .primary:
+      return Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.3)
+    case .skipRest:
+      return Color(hex: TidePalette.skipRestAccentHex)
+        .opacity(colorScheme == .dark ? 0.12 : 0.22)
+    }
+  }
+
+  private var symbolShadowColor: Color {
+    guard enabled, role == .skipRest else { return .clear }
+    return Color(hex: TidePalette.skipRestAccentHex)
+      .opacity(colorScheme == .dark ? 0.28 : 0.36)
   }
 }
 
@@ -720,26 +1000,78 @@ private struct ClipoControlPressStyle: ButtonStyle {
   }
 }
 
+private enum BreakDurationKind: CaseIterable, Identifiable {
+  case shortBreak
+  case longBreak
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .shortBreak: "短休息时长"
+    case .longBreak: "长休息时长"
+    }
+  }
+
+  var compactTitle: String {
+    switch self {
+    case .shortBreak: "短休息"
+    case .longBreak: "长休息"
+    }
+  }
+
+  var minutesRange: ClosedRange<Int> {
+    switch self {
+    case .shortBreak: PomodoroConfiguration.breakMinutesRange
+    case .longBreak: PomodoroConfiguration.longBreakMinutesRange
+    }
+  }
+
+  var presets: [Int] {
+    switch self {
+    case .shortBreak: PomodoroConfiguration.breakSecondPresets
+    case .longBreak: PomodoroConfiguration.longBreakSecondPresets
+    }
+  }
+
+  func seconds(in configuration: PomodoroConfiguration) -> Int {
+    switch self {
+    case .shortBreak: configuration.breakSeconds
+    case .longBreak: configuration.longBreakSeconds
+    }
+  }
+
+  @MainActor
+  func apply(minutes: Int, to controller: PomodoroController) {
+    switch self {
+    case .shortBreak: controller.setBreakMinutes(minutes)
+    case .longBreak: controller.setLongBreakMinutes(minutes)
+    }
+  }
+}
+
 private struct BreakDurationPopover: View {
   var controller: PomodoroController
+  var kind: BreakDurationKind
   var onClose: () -> Void
 
   @State private var draftMinutes: Int
 
-  init(controller: PomodoroController, onClose: @escaping () -> Void) {
+  init(controller: PomodoroController, kind: BreakDurationKind, onClose: @escaping () -> Void) {
     self.controller = controller
+    self.kind = kind
     self.onClose = onClose
-    let roundedMinutes = (controller.configuration.breakSeconds + 59) / 60
+    let roundedMinutes = (kind.seconds(in: controller.configuration) + 59) / 60
     _draftMinutes = State(initialValue: min(
-      max(roundedMinutes, PomodoroConfiguration.breakMinutesRange.lowerBound),
-      PomodoroConfiguration.breakMinutesRange.upperBound
+      max(roundedMinutes, kind.minutesRange.lowerBound),
+      kind.minutesRange.upperBound
     ))
   }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(alignment: .firstTextBaseline) {
-        Text("休息时长")
+        Text(kind.title)
           .font(.system(size: 14, weight: .bold))
         Spacer()
         Text("应用后生效")
@@ -748,7 +1080,7 @@ private struct BreakDurationPopover: View {
       }
 
       LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-        ForEach(PomodoroConfiguration.breakSecondPresets, id: \.self) { seconds in
+        ForEach(kind.presets, id: \.self) { seconds in
           Button {
             draftMinutes = seconds / 60
           } label: {
@@ -770,7 +1102,7 @@ private struct BreakDurationPopover: View {
       HStack(spacing: 8) {
         customAdjustmentButton(
           symbol: "minus",
-          enabled: draftMinutes > PomodoroConfiguration.breakMinutesRange.lowerBound
+          enabled: draftMinutes > kind.minutesRange.lowerBound
         ) {
           draftMinutes -= 1
         }
@@ -783,7 +1115,7 @@ private struct BreakDurationPopover: View {
           .frame(width: 42, height: 30)
           .tideGlassCapsule()
           .onSubmit(applyCustomDuration)
-          .accessibilityLabel("自定义休息分钟数")
+          .accessibilityLabel("自定义\(kind.title)分钟数")
 
         Text("分钟")
           .font(.system(size: 11, weight: .medium))
@@ -791,7 +1123,7 @@ private struct BreakDurationPopover: View {
 
         customAdjustmentButton(
           symbol: "plus",
-          enabled: draftMinutes < PomodoroConfiguration.breakMinutesRange.upperBound
+          enabled: draftMinutes < kind.minutesRange.upperBound
         ) {
           draftMinutes += 1
         }
@@ -807,10 +1139,10 @@ private struct BreakDurationPopover: View {
     .frame(width: 280)
     .tideGlassRect(cornerRadius: 16, backingOpacity: 0.58)
     .onAppear {
-      let roundedMinutes = (controller.configuration.breakSeconds + 59) / 60
+      let roundedMinutes = (kind.seconds(in: controller.configuration) + 59) / 60
       draftMinutes = min(
-        max(roundedMinutes, PomodoroConfiguration.breakMinutesRange.lowerBound),
-        PomodoroConfiguration.breakMinutesRange.upperBound
+        max(roundedMinutes, kind.minutesRange.lowerBound),
+        kind.minutesRange.upperBound
       )
     }
     .onExitCommand(perform: onClose)
@@ -840,11 +1172,11 @@ private struct BreakDurationPopover: View {
 
   private func applyCustomDuration() {
     let minutes = min(
-      max(draftMinutes, PomodoroConfiguration.breakMinutesRange.lowerBound),
-      PomodoroConfiguration.breakMinutesRange.upperBound
+      max(draftMinutes, kind.minutesRange.lowerBound),
+      kind.minutesRange.upperBound
     )
     draftMinutes = minutes
-    controller.setBreakMinutes(minutes)
+    kind.apply(minutes: minutes, to: controller)
     onClose()
   }
 }

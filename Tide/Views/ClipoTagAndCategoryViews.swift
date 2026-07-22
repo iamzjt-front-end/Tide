@@ -156,7 +156,7 @@ struct FocusLabelPickerPopover: View {
                 controller.selectTag(nil)
                 onClose()
               } label: {
-                Label("不使用标签", systemImage: "tag.slash")
+                Label("无标签", systemImage: "tag.slash")
                   .font(.system(size: 11, weight: .medium))
                   .foregroundStyle(.secondary)
                   .frame(maxWidth: .infinity, minHeight: 32)
@@ -165,7 +165,7 @@ struct FocusLabelPickerPopover: View {
               .buttonStyle(.plain)
               .focusable(false)
               .tideGlassRect(cornerRadius: 10, interactive: true)
-              .accessibilityLabel("清除当前标签选择")
+              .accessibilityLabel("选择无标签")
             }
           }
         }
