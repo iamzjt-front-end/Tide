@@ -68,6 +68,32 @@ struct PomodoroStatisticsTests {
     #expect(result.tagDistribution.first?.seconds == 2_100)
   }
 
+  @Test func currentWeekAlwaysRunsFromMondayThroughSunday() {
+    var sundayFirstCalendar = calendar
+    sundayFirstCalendar.firstWeekday = 1
+    let interval = PomodoroStatistics.currentWeekInterval(
+      containing: date(2026, 7, 20, 12),
+      calendar: sundayFirstCalendar
+    )
+
+    #expect(interval.start == date(2026, 7, 20))
+    #expect(interval.end == date(2026, 7, 27))
+  }
+
+  @Test func monthChartAxisUsesDatesInsteadOfWeekdays() {
+    let style = ClipoStatsRange.month.axisLabelStyle(bucket: .day)
+    let label = ClipoStatisticsAxisLabelFormatter.text(
+      for: date(2026, 7, 20),
+      style: style,
+      calendar: calendar
+    )
+
+    #expect(style == .dayOfMonth)
+    #expect(label == "20日")
+    #expect(ClipoStatsRange.week.axisLabelStyle(bucket: .day) == .weekday)
+    #expect(ClipoStatsRange.year.axisLabelStyle(bucket: .month) == .month)
+  }
+
   private func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int = 0, _ minute: Int = 0) -> Date {
     calendar.date(from: DateComponents(
       timeZone: calendar.timeZone,

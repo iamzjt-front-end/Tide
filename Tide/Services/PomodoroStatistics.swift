@@ -65,6 +65,21 @@ enum PomodoroStatistics {
     case month
   }
 
+  static func currentWeekInterval(
+    containing date: Date,
+    calendar sourceCalendar: Calendar = .current
+  ) -> DateInterval {
+    var calendar = sourceCalendar
+    calendar.firstWeekday = 2
+    calendar.minimumDaysInFirstWeek = 4
+    let day = calendar.startOfDay(for: date)
+    if let interval = calendar.dateInterval(of: .weekOfYear, for: day) {
+      return interval
+    }
+    let end = calendar.date(byAdding: .day, value: 7, to: day) ?? date
+    return DateInterval(start: day, end: end)
+  }
+
   static func snapshot(
     sessions: [FocusSession],
     period: StatisticsPeriod,
