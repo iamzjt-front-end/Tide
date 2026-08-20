@@ -547,6 +547,106 @@ struct PomodoroControllerTests {
     #expect(!rig.controller.configuration.notificationsEnabled)
   }
 
+  @Test func menuBarQuickControlsReflectIdleFocus() {
+    let rig = makeRig()
+    let controls = rig.controller.quickControls
+    #expect(controls.primary.label == "开始")
+    #expect(controls.primary.symbol == "play.fill")
+    #expect(controls.primary.action == .togglePrimary)
+    #expect(controls.secondary == nil)
+  }
+
+  @Test func menuBarQuickControlsReflectRunningFocus() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+    rig.controller.start(at: start)
+    let controls = rig.controller.quickControls
+    #expect(controls.primary.label == "暂停")
+    #expect(controls.primary.action == .togglePrimary)
+    #expect(controls.secondary?.label == "停止")
+    #expect(controls.secondary?.action == .stop)
+  }
+
+  @Test func menuBarQuickControlsReflectPausedFocus() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+    rig.controller.start(at: start)
+    rig.controller.pause(at: start.addingTimeInterval(10))
+    let controls = rig.controller.quickControls
+    #expect(controls.primary.label == "继续")
+    #expect(controls.primary.action == .togglePrimary)
+    #expect(controls.secondary?.action == .stop)
+  }
+
+  @Test func menuBarQuickControlsReflectBreakWithSkip() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+    rig.controller.start(at: start)
+    rig.controller.tick(at: start.addingTimeInterval(60))
+
+    let idleBreak = rig.controller.quickControls
+    #expect(idleBreak.primary.label == "开始短休息")
+    #expect(idleBreak.secondary?.label == "跳过休息")
+    #expect(idleBreak.secondary?.action == .skip)
+
+    rig.controller.start(at: start.addingTimeInterval(70))
+    let runningBreak = rig.controller.quickControls
+    #expect(runningBreak.primary.label == "暂停")
+    #expect(runningBreak.secondary?.action == .skip)
+  }
+
+  @Test func menuBarQuickControlsReflectStopwatch() {
+    let rig = makeRig()
+    rig.controller.setTimerMode(.stopwatch, at: start)
+
+    let idle = rig.controller.quickControls
+    #expect(idle.primary.label == "开始")
+    #expect(idle.secondary == nil)
+
+    rig.controller.start(at: start)
+    let running = rig.controller.quickControls
+    #expect(running.primary.label == "暂停")
+    #expect(running.secondary?.label == "停止")
+    #expect(running.secondary?.action == .stop)
+  }
+
+  @Test func performQuickControlToggleTransitionsStates() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+
+    rig.controller.performQuickControl(.togglePrimary, at: start)
+    #expect(rig.controller.snapshot.runState == .running)
+
+    rig.controller.performQuickControl(.togglePrimary, at: start.addingTimeInterval(10))
+    #expect(rig.controller.snapshot.runState == .paused)
+
+    rig.controller.performQuickControl(.togglePrimary, at: start.addingTimeInterval(20))
+    #expect(rig.controller.snapshot.runState == .running)
+  }
+
+  @Test func performQuickControlStopRecordsEarlyCompletion() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+    rig.controller.start(at: start)
+    rig.controller.performQuickControl(.stop, at: start.addingTimeInterval(15))
+
+    #expect(rig.controller.snapshot.runState == .idle)
+    #expect(rig.controller.snapshot.phase == .breakTime)
+    #expect(rig.controller.sessions.count == 1)
+    #expect(rig.controller.sessions.first?.durationSeconds == 15)
+  }
+
+  @Test func performQuickControlSkipSkipsPreparedBreak() {
+    let rig = makeRig()
+    rig.controller.setFocusMinutes(1)
+    rig.controller.start(at: start)
+    rig.controller.tick(at: start.addingTimeInterval(60))
+    rig.controller.performQuickControl(.skip, at: start.addingTimeInterval(65))
+
+    #expect(rig.controller.snapshot.phase == .focus)
+    #expect(rig.controller.snapshot.runState == .idle)
+  }
+
   private func makeRig() -> TestRig {
     TestRig(now: start)
   }
