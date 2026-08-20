@@ -33,6 +33,51 @@ enum PomodoroTestNotificationState: Equatable {
   }
 }
 
+enum MenuBarQuickAction: Equatable, Sendable {
+  case togglePrimary
+  case skip
+  case stop
+}
+
+struct MenuBarQuickControl: Equatable, Sendable {
+  var symbol: String
+  var label: String
+  var action: MenuBarQuickAction
+}
+
+struct MenuBarQuickControlState: Equatable, Sendable {
+  var primary: MenuBarQuickControl
+  var secondary: MenuBarQuickControl?
+
+  static func make(from snapshot: TimerSnapshot) -> MenuBarQuickControlState {
+    let primary: MenuBarQuickControl
+    switch snapshot.runState {
+    case .idle:
+      let isBreak = snapshot.timerMode == .pomodoro && snapshot.phase.isBreak
+      primary = MenuBarQuickControl(
+        symbol: "play.fill",
+        label: isBreak ? "开始\(snapshot.phase.title)" : "开始",
+        action: .togglePrimary
+      )
+    case .running:
+      primary = MenuBarQuickControl(symbol: "pause.fill", label: "暂停", action: .togglePrimary)
+    case .paused:
+      primary = MenuBarQuickControl(symbol: "play.fill", label: "继续", action: .togglePrimary)
+    }
+
+    let secondary: MenuBarQuickControl?
+    if snapshot.timerMode == .pomodoro && snapshot.phase.isBreak {
+      secondary = MenuBarQuickControl(symbol: "forward.end.fill", label: "跳过休息", action: .skip)
+    } else if snapshot.runState != .idle {
+      secondary = MenuBarQuickControl(symbol: "stop.fill", label: "停止", action: .stop)
+    } else {
+      secondary = nil
+    }
+
+    return MenuBarQuickControlState(primary: primary, secondary: secondary)
+  }
+}
+
 @MainActor
 @Observable
 final class PomodoroController {
@@ -117,6 +162,10 @@ final class PomodoroController {
     if archive.snapshot.runState == .paused { return "pause.circle.fill" }
     if archive.snapshot.timerMode == .stopwatch { return "stopwatch" }
     return archive.snapshot.phase.symbolName
+  }
+
+  var quickControls: MenuBarQuickControlState {
+    MenuBarQuickControlState.make(from: archive.snapshot)
   }
 
   var progress: Double {
@@ -272,6 +321,21 @@ final class PomodoroController {
     archive.snapshot.lastUpdatedAt = now
     show("已继续", kind: .success)
     persist()
+  }
+
+  func performQuickControl(_ action: MenuBarQuickAction, at now: Date = .now) {
+    switch action {
+    case .togglePrimary:
+      switch archive.snapshot.runState {
+      case .idle: start(at: now)
+      case .running: pause(at: now)
+      case .paused: resume(at: now)
+      }
+    case .skip:
+      skipBreak(at: now)
+    case .stop:
+      stop(at: now)
+    }
   }
 
   func stop(at now: Date = .now) {
