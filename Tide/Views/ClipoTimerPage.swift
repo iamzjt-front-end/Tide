@@ -289,11 +289,7 @@ struct ClipoTimerPage: View {
   }
 
   private func primaryAction() {
-    switch controller.snapshot.runState {
-    case .idle: controller.start()
-    case .running: controller.pause()
-    case .paused: controller.resume()
-    }
+    controller.performQuickControl(.togglePrimary)
   }
 
   private var stopConfirmationTitle: String {
