@@ -145,6 +145,7 @@ struct ClipoStatisticsPage: View {
   @State private var distributionProgress = 0.0
   @State private var dataOpacity = 1.0
   @State private var hoveredDay: Date?
+  @State private var hoveredDistIndex: Int?
 
   private var interval: DateInterval { selectedInterval() }
 
@@ -260,9 +261,7 @@ struct ClipoStatisticsPage: View {
 
       GlassCard {
         VStack(alignment: .leading, spacing: 10) {
-          Text("专注时间分布")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(.secondary)
+          chartHeaderRow(title: "专注时间分布", summary: hoveredDistSummary)
           if displayedStats.tagDistribution.isEmpty {
             Text("暂无专注记录")
               .font(.system(size: 12))
@@ -273,12 +272,15 @@ struct ClipoStatisticsPage: View {
               distributionChart
               VStack(spacing: 7) {
                 ForEach(displayedStats.tagDistribution.prefix(4)) { item in
+                  let isHovered = hoveredDistItem?.id == item.id
+                  let dimmed = hoveredDistItem != nil && !isHovered
                   HStack(spacing: 6) {
                     Circle()
                       .fill(Color(hex: item.colorHex))
                       .frame(width: 7, height: 7)
+                      .scaleEffect(isHovered ? 1.35 : 1)
                     Text(item.name)
-                      .font(.system(size: 10, weight: .medium))
+                      .font(.system(size: 10, weight: isHovered ? .semibold : .medium))
                       .lineLimit(1)
                     Spacer()
                     Text(distributionLabel(item.seconds))
@@ -286,6 +288,7 @@ struct ClipoStatisticsPage: View {
                       .foregroundStyle(.secondary)
                       .contentTransition(.numericText(value: Double(item.seconds)))
                   }
+                  .opacity(dimmed ? 0.58 : 1)
                 }
               }
             }
@@ -301,12 +304,16 @@ struct ClipoStatisticsPage: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     .onChange(of: range) {
       setHoveredDay(nil)
+      setHoveredDistIndex(nil)
     }
     .onChange(of: statisticsAnimationKey) {
       if let day = hoveredDay,
         !displayedStats.daily.contains(where: { $0.day == day })
       {
         hoveredDay = nil
+      }
+      if hoveredDistIndex.map({ !displayedStats.tagDistribution.indices.contains($0) }) == true {
+        hoveredDistIndex = nil
       }
     }
     .task(id: statisticsAnimationKey) {
@@ -770,6 +777,60 @@ struct ClipoStatisticsPage: View {
     return "\(weekday) \(monthAndDay)"
   }
 
+  private var hoveredDistItem: FocusDistributionItem? {
+    guard let index = hoveredDistIndex,
+      displayedStats.tagDistribution.indices.contains(index)
+    else { return nil }
+    return displayedStats.tagDistribution[index]
+  }
+
+  private var hoveredDistSummary: String? {
+    guard let item = hoveredDistItem else { return nil }
+    return "\(item.name) · \(compactDuration(item.seconds)) · \(distributionPercentage(item.seconds))%"
+  }
+
+  private func setHoveredDistIndex(_ index: Int?) {
+    guard index != hoveredDistIndex else { return }
+    hoveredDistIndex = index
+  }
+
+  private func sectorColor(for item: FocusDistributionItem) -> Color {
+    guard let hoveredItem = hoveredDistItem else { return Color(hex: item.colorHex) }
+    if hoveredItem.id == item.id { return Color(hex: item.colorHex) }
+    return Color(hex: item.colorHex).opacity(0.32)
+  }
+
+  private func updateDistributionHover(_ phase: HoverPhase, frame: CGRect) {
+    switch phase {
+    case .active(let location):
+      let radius = min(frame.width, frame.height) / 2
+      let dx = location.x - frame.midX
+      let dy = location.y - frame.midY
+      let distance = sqrt(dx * dx + dy * dy)
+      let items = displayedStats.tagDistribution
+      let totalSeconds = items.reduce(0) { $0 + max(0, $1.seconds) }
+      guard totalSeconds > 0, distance >= radius * 0.55, distance <= radius * 1.04 else {
+        setHoveredDistIndex(nil)
+        return
+      }
+      var angle = atan2(dx, -dy)
+      if angle < 0 { angle += 2 * .pi }
+
+      var cumulative = 0.0
+      var matchedIndex: Int?
+      for (index, item) in items.enumerated() {
+        cumulative += Double(max(0, item.seconds))
+        if angle < cumulative / Double(totalSeconds) * 2 * .pi {
+          matchedIndex = index
+          break
+        }
+      }
+      setHoveredDistIndex(matchedIndex ?? (items.isEmpty ? nil : items.count - 1))
+    case .ended:
+      setHoveredDistIndex(nil)
+    }
+  }
+
   private var distributionChart: some View {
     Chart(displayedStats.tagDistribution) { item in
       SectorMark(
@@ -777,10 +838,21 @@ struct ClipoStatisticsPage: View {
         innerRadius: .ratio(0.55),
         angularInset: 1
       )
-      .foregroundStyle(Color(hex: item.colorHex))
+      .foregroundStyle(sectorColor(for: item))
     }
     .frame(width: 105, height: 105)
     .chartLegend(.hidden)
+    .chartOverlay { _ in
+      GeometryReader { geometry in
+        let frame = CGRect(origin: .zero, size: geometry.size)
+
+        Color.clear
+          .contentShape(Rectangle())
+          .onContinuousHover { phase in
+            updateDistributionHover(phase, frame: frame)
+          }
+      }
+    }
     .scaleEffect(0.84 + 0.16 * distributionProgress)
     .rotationEffect(.degrees(-8 * (1 - distributionProgress)))
     .opacity(distributionProgress)
