@@ -144,6 +144,7 @@ struct ClipoStatisticsPage: View {
   @State private var chartProgress = 0.0
   @State private var distributionProgress = 0.0
   @State private var dataOpacity = 1.0
+  @State private var hoveredDay: Date?
 
   private var interval: DateInterval { selectedInterval() }
 
@@ -238,10 +239,11 @@ struct ClipoStatisticsPage: View {
       .scaleEffect(summaryVisible ? 1 : 0.985, anchor: .top)
 
       GlassCard {
-        VStack(alignment: .leading, spacing: 10) {
-          Text(range.summaryTitle)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 9) {
+          chartHeaderRow(
+            title: range.summaryTitle,
+            summary: hasFocusableDailyData ? hoveredBarSummary : nil
+          )
           ZStack {
             focusChart
             if displayedStats.daily.allSatisfy({ $0.seconds == 0 }) {
@@ -257,7 +259,7 @@ struct ClipoStatisticsPage: View {
       .scaleEffect(chartVisible ? 1 : 0.985, anchor: .top)
 
       GlassCard {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
           Text("专注时间分布")
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.secondary)
@@ -272,7 +274,9 @@ struct ClipoStatisticsPage: View {
               VStack(spacing: 7) {
                 ForEach(displayedStats.tagDistribution.prefix(4)) { item in
                   HStack(spacing: 6) {
-                    Circle().fill(Color(hex: item.colorHex)).frame(width: 7, height: 7)
+                    Circle()
+                      .fill(Color(hex: item.colorHex))
+                      .frame(width: 7, height: 7)
                     Text(item.name)
                       .font(.system(size: 10, weight: .medium))
                       .lineLimit(1)
@@ -295,6 +299,16 @@ struct ClipoStatisticsPage: View {
     .padding(.horizontal, 46)
     .padding(.bottom, 16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    .onChange(of: range) {
+      setHoveredDay(nil)
+    }
+    .onChange(of: statisticsAnimationKey) {
+      if let day = hoveredDay,
+        !displayedStats.daily.contains(where: { $0.day == day })
+      {
+        hoveredDay = nil
+      }
+    }
     .task(id: statisticsAnimationKey) {
       await animateStatistics(to: calculatedStats)
     }
@@ -596,6 +610,7 @@ struct ClipoStatisticsPage: View {
     customStart = calendar.startOfDay(for: min(draftCustomStart, draftCustomEnd))
     customEnd = calendar.startOfDay(for: max(draftCustomStart, draftCustomEnd))
     range = .custom
+    hoveredDay = nil
     showingCustomRangeEditor = false
   }
 
@@ -605,7 +620,7 @@ struct ClipoStatisticsPage: View {
         x: .value("日期", point.day, unit: bucket == .month ? .month : .day),
         y: .value("分钟", Double(point.seconds) / 60 * chartProgress)
       )
-      .foregroundStyle(Color.accentColor.opacity(point.seconds > 0 ? 0.86 : 0.16))
+      .foregroundStyle(barColor(for: point))
       .cornerRadius(3)
     }
     .chartXAxis {
@@ -622,9 +637,137 @@ struct ClipoStatisticsPage: View {
       }
     }
     .chartYAxis(.hidden)
+    .chartOverlay { chart in
+      GeometryReader { geometry in
+        let plotRect = chart.plotFrame.map { geometry[$0] } ?? CGRect(origin: .zero, size: geometry.size)
+
+        Color.clear
+          .contentShape(Rectangle())
+          .onContinuousHover { phase in
+            updateChartHover(phase, plotRect: plotRect, chart: chart)
+          }
+      }
+    }
     .frame(height: 112)
     .animation(reduceMotion ? nil : .smooth(duration: 0.56), value: chartProgress)
     .accessibilityLabel("\(range.summaryTitle)柱状图")
+  }
+
+  private var hoveredPoint: FocusDayPoint? {
+    guard let hoveredDay else { return nil }
+    return displayedStats.daily.first { $0.day == hoveredDay }
+  }
+
+  private var hasFocusableDailyData: Bool {
+    !displayedStats.daily.isEmpty && !displayedStats.daily.allSatisfy { $0.seconds == 0 }
+  }
+
+  private func barColor(for point: FocusDayPoint) -> Color {
+    let isHovered = hoveredPoint?.day == point.day
+    if point.seconds <= 0 {
+      return Color.accentColor.opacity(isHovered ? 0.42 : 0.16)
+    }
+    if hoveredPoint == nil {
+      return Color.accentColor.opacity(0.86)
+    }
+    return Color.accentColor.opacity(isHovered ? 1 : 0.34)
+  }
+
+  private func updateChartHover(_ phase: HoverPhase, plotRect: CGRect, chart: ChartProxy) {
+    switch phase {
+    case .active(let location):
+      guard hasFocusableDailyData else {
+        setHoveredDay(nil)
+        return
+      }
+      let clampedX = min(max(location.x, plotRect.minX), plotRect.maxX)
+      guard
+        let (value, _) = chart.value(
+          at: CGPoint(x: clampedX, y: plotRect.midY),
+          as: (Date, Double).self
+        )
+      else {
+        setHoveredDay(nil)
+        return
+      }
+      setHoveredDay(nearestBucketStart(for: value))
+    case .ended:
+      setHoveredDay(nil)
+    }
+  }
+
+  private func setHoveredDay(_ day: Date?) {
+    guard day != hoveredDay else { return }
+    hoveredDay = day
+  }
+
+  private var hoverAnimation: Animation? {
+    reduceMotion ? nil : .snappy(duration: 0.15, extraBounce: 0)
+  }
+
+  private func nearestBucketStart(for date: Date) -> Date? {
+    let calendar = Calendar.current
+    let granularity: Calendar.Component = bucket == .month ? .month : .day
+    let target = calendar.dateInterval(of: granularity, for: date)?.start ?? date
+    let halfUnit: TimeInterval = bucket == .month ? 15.5 * 86_400 : 43_200
+    guard
+      let nearest = displayedStats.daily.min(by: {
+        abs($0.day.timeIntervalSince(target)) < abs($1.day.timeIntervalSince(target))
+      }),
+      abs(nearest.day.timeIntervalSince(target)) <= halfUnit
+    else { return nil }
+    return nearest.day
+  }
+
+  @ViewBuilder
+  private func chartHeaderRow(title: String, summary: String?) -> some View {
+    Text(title)
+      .font(.system(size: 12, weight: .semibold))
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .overlay(alignment: .trailing) {
+        headerSummaryChip(summary)
+      }
+  }
+
+  private func headerSummaryChip(_ summary: String?) -> some View {
+    Text(summary ?? " ")
+      .font(.system(size: 9, weight: .semibold, design: .rounded))
+      .monospacedDigit()
+      .lineLimit(1)
+      .foregroundStyle(Color.primary.opacity(0.68))
+      .padding(.horizontal, 10)
+      .frame(height: 21)
+      .fixedSize()
+      .background {
+        Capsule()
+          .fill(Color.primary.opacity(0.05))
+          .overlay {
+            Capsule()
+              .stroke(Color.primary.opacity(0.08), lineWidth: 0.7)
+          }
+      }
+      .opacity(summary == nil ? 0 : 1)
+      .animation(hoverAnimation, value: summary == nil)
+  }
+
+  private var hoveredBarSummary: String? {
+    guard let point = hoveredPoint else { return nil }
+    let title = tooltipTitle(for: point.day)
+    guard point.seconds > 0 else { return "\(title) · 暂无专注" }
+    return "\(title) · \(compactDuration(point.seconds)) · \(point.completedCount) 个番茄"
+  }
+
+  private func tooltipTitle(for date: Date) -> String {
+    let calendar = Calendar.current
+    if bucket == .month {
+      let components = calendar.dateComponents([.year, .month], from: date)
+      return "\(components.year ?? 1)年\(components.month ?? 1)月"
+    }
+    if calendar.isDateInToday(date) { return "今天" }
+    let weekday = ClipoStatisticsAxisLabelFormatter.text(for: date, style: .weekday)
+    let monthAndDay = ClipoStatisticsAxisLabelFormatter.text(for: date, style: .monthAndDay)
+    return "\(weekday) \(monthAndDay)"
   }
 
   private var distributionChart: some View {
@@ -700,11 +843,14 @@ struct ClipoStatisticsPage: View {
     return remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m"
   }
 
-  private func distributionLabel(_ seconds: Int) -> String {
-    let percentage = displayedStats.totalFocusSeconds == 0
+  private func distributionPercentage(_ seconds: Int) -> Int {
+    displayedStats.totalFocusSeconds == 0
       ? 0
       : Int((Double(seconds) / Double(displayedStats.totalFocusSeconds) * 100).rounded())
-    return "\(compactDuration(seconds))  \(percentage)%"
+  }
+
+  private func distributionLabel(_ seconds: Int) -> String {
+    "\(compactDuration(seconds))  \(distributionPercentage(seconds))%"
   }
 
   private func axisLabel(_ date: Date) -> String {
